@@ -15,7 +15,7 @@ type CinemaRepo struct {
 
 type CinemasRepoInterface interface {
 	GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int, error)
-	GetCinemaByID(ctx context.Context) (*entity.Cinema, error)
+	GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error)
 }
 
 func NewCinemaRepo(db database.PgxIface, log *zap.Logger) CinemasRepoInterface {
@@ -60,13 +60,13 @@ func (c *CinemaRepo) GetAllCinemas(ctx context.Context, page, limit int) ([]*ent
 	return cinemas, total, nil
 }
 
-func (c *CinemaRepo) GetCinemaByID(ctx context.Context) (*entity.Cinema, error) {
+func (c *CinemaRepo) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error) {
 	var cinemas entity.Cinema
 	query := `SELECT name,location from cinemas WHERE id=$1;`
-	err := c.db.QueryRow(ctx, query, cinemas.ID).Scan(&cinemas.Name, &cinemas.Location)
+	err := c.db.QueryRow(ctx, query, id).Scan(&cinemas.Name, &cinemas.Location)
 	if err != nil {
 		c.log.Error("failed to get cinema by id on database", zap.Error(err), zap.String("query", query))
 		return nil, err
 	}
-	return nil, err
+	return &cinemas, nil
 }

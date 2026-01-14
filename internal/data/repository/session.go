@@ -57,7 +57,7 @@ func (s *SessionRepo) RevokedSession(ctx context.Context, session *entity.Sessio
 func (s *SessionRepo) ExtendSession(ctx context.Context, session *entity.Session) error {
 	query := `UPDATE sessions SET id=$1, expired_at=$2 ,last_active=NOW() WHERE id=$3 AND revoked_at is NULL`
 	expired := time.Now().Add(24 * time.Hour)
-	_, err := s.db.Exec(ctx, query, session.ID, session.ExpiredAt, session.ID)
+	_, err := s.db.Exec(ctx, query, session.NewID, expired, session.ID)
 	if err != nil {
 		s.log.Error("failed to update revoke on database", zap.Error(err), zap.String("query", query))
 		return err

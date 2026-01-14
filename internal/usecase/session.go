@@ -60,7 +60,7 @@ func (s *SessionUsecase) GetUserIDBySession(ctx context.Context, session *entity
 }
 
 func (s *SessionUsecase) IsValid(ctx context.Context, session *entity.Session) (bool, error) {
-	valid, err := s.IsValid(ctx, session)
+	valid, err := s.sessionRepo.IsValid(ctx, session)
 	if err != nil {
 		s.log.Error("failed to extend session on reposioty", zap.Error(err))
 		return false, err

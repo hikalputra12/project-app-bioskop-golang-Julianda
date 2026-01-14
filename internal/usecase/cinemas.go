@@ -1,0 +1,54 @@
+package usecase
+
+import (
+	"app-bioskop/internal/data/entity"
+	"app-bioskop/internal/data/repository"
+	"app-bioskop/internal/dto"
+	"app-bioskop/pkg/utils"
+	"context"
+
+	"go.uber.org/zap"
+)
+
+type CinemaUsecase struct {
+	cinemaRepo repository.CinemasRepoInterface
+	log        *zap.Logger
+}
+
+type CinemaUsecaseInterface interface {
+	GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, *dto.Pagination, error)
+	GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error)
+}
+
+func NewCinemaUsecase(cinemaRepo repository.CinemasRepoInterface, log *zap.Logger) CinemaUsecaseInterface {
+	return &CinemaUsecase{
+		cinemaRepo: cinemaRepo,
+		log:        log,
+	}
+}
+func (c *CinemaUsecase) GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, *dto.Pagination, error) {
+	rows, total, err := c.cinemaRepo.GetAllCinemas(ctx, page, limit)
+	if err != nil {
+		c.log.Error("failed get all cinemas on repository ",
+			zap.Error(err),
+		)
+		return nil, nil, err
+	}
+	pagination := dto.Pagination{
+		CurrentPage: page,
+		Limit:       limit,
+		TotalPages:  utils.TotalPage(limit, int64(total)),
+	}
+	return rows, &pagination, nil
+}
+
+func (c *CinemaUsecase) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error) {
+	row, err := c.cinemaRepo.GetCinemaByID(ctx, id)
+	if err != nil {
+		c.log.Error("failed get cinemas by id on repository ",
+			zap.Error(err),
+		)
+		return nil, err
+	}
+	return row, nil
+}

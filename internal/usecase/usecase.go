@@ -10,6 +10,7 @@ type Usecase struct {
 	RegisterUseCase RegisterUseCaseInterface
 	AuthUsecase     AuthUsecaseInterface
 	SessionUsecase  SessionUsecaseInterface
+	CinemaUsecase   CinemaUsecaseInterface
 }
 
 func AllUseCase(repo repository.Repository, log *zap.Logger) Usecase {
@@ -17,5 +18,6 @@ func AllUseCase(repo repository.Repository, log *zap.Logger) Usecase {
 		RegisterUseCase: NewRegisterUseCase(repo.RegisterRepo, log),
 		AuthUsecase:     NewAuthUsecase(repo.AuthRepo, log),
 		SessionUsecase:  NewSessionUsecase(repo.SessionRepo, log),
+		CinemaUsecase:   NewCinemaUsecase(repo.CinemaRepo, log),
 	}
 }

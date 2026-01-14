@@ -11,7 +11,12 @@ func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			//ambil cookie
 			ctx := r.Context()
-			session, _ := r.Cookie("session")
+			session, err := r.Cookie("session")
+			if err != nil {
+				utils.ResponseError(w, http.StatusUnauthorized, "Unauthorized: sesi tidak ditemukan", nil)
+				return
+			}
+			//ambil value dari cookie
 			getSessionID := session.Value
 			sessionID := &entity.Session{
 				ID: getSessionID,
@@ -30,7 +35,8 @@ func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
 			newSession := utils.NewUUID()
 			//exted cookie
 			NewsessionID := &entity.Session{
-				ID: newSession,
+				NewID: newSession,
+				ID:    getSessionID,
 			}
 			err = m.Usecase.SessionUsecase.ExtendSession(ctx, NewsessionID)
 			if err != nil {
