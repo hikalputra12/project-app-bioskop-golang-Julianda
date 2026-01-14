@@ -11,19 +11,19 @@ import (
 	"go.uber.org/zap"
 )
 
-type RegisterWire struct {
+type RegisterAdaptor struct {
 	RegisterUseCase usecase.RegisterUseCaseInterface
 	log             *zap.Logger
 }
 
-func NewRegisterWire(registerUseCase usecase.RegisterUseCaseInterface, log *zap.Logger) *RegisterWire {
-	return &RegisterWire{
+func NewRegisterAdaptor(registerUseCase usecase.RegisterUseCaseInterface, log *zap.Logger) *RegisterAdaptor {
+	return &RegisterAdaptor{
 		RegisterUseCase: registerUseCase,
 		log:             log,
 	}
 }
 
-func (h *RegisterWire) Register(w http.ResponseWriter, r *http.Request) {
+func (h *RegisterAdaptor) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.RegisterRequest
 	ctx := r.Context()
 

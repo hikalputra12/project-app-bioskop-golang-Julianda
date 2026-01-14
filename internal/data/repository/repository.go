@@ -8,11 +8,14 @@ import (
 
 type Repository struct {
 	RegisterRepo RegisterInterface
-	log          *zap.Logger
+	AuthRepo     AuthRepoInterface
+	SessionRepo  SessionRepoInterface
 }
 
 func AllRepository(db database.PgxIface, log *zap.Logger) *Repository {
 	return &Repository{
 		RegisterRepo: NewRegisterRepository(db, log),
+		AuthRepo:     NewAuthRepo(db, log),
+		SessionRepo:  NewSessionRepo(db, log),
 	}
 }

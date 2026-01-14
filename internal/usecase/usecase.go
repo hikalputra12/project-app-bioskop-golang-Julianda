@@ -7,13 +7,15 @@ import (
 )
 
 type Usecase struct {
-	RegisterRepo repository.RegisterInterface
-	log          *zap.Logger
+	RegisterUseCase RegisterUseCaseInterface
+	AuthUsecase     AuthUsecaseInterface
+	SessionUsecase  SessionUsecaseInterface
 }
 
 func AllUseCase(repo repository.Repository, log *zap.Logger) Usecase {
 	return Usecase{
-		RegisterRepo: NewRegisterUseCase(repo.RegisterRepo, log),
-		log:          log,
+		RegisterUseCase: NewRegisterUseCase(repo.RegisterRepo, log),
+		AuthUsecase:     NewAuthUsecase(repo.AuthRepo, log),
+		SessionUsecase:  NewSessionUsecase(repo.SessionRepo, log),
 	}
 }

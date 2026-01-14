@@ -12,12 +12,14 @@ import (
 func Wiring(repo repository.Repository, log *zap.Logger) *chi.Mux {
 
 	useCase := usecase.AllUseCase(repo, log)
-	handler := adaptor.AllAdaptor(useCase, log)
+	adaptor := adaptor.AllAdaptor(useCase, log)
 
 	r := chi.NewRouter()
 
 	r.Route("/api", func(r chi.Router) {
-		r.Post("/register", handler.RegisterWire.Register)
+		r.Post("/login", adaptor.AuthAdaptor.Login)
+		r.Post("/logout", adaptor.AuthAdaptor.Logout)
+		r.Post("/register", adaptor.RegisterWire.Register)
 
 	})
 

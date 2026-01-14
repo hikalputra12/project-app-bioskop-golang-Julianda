@@ -7,13 +7,13 @@ import (
 )
 
 type Adaptor struct {
-	RegisterWire *RegisterWire
-	log          *zap.Logger
+	RegisterWire *RegisterAdaptor
+	AuthAdaptor  *AuthAdaptor
 }
 
 func AllAdaptor(uc usecase.Usecase, log *zap.Logger) *Adaptor {
 	return &Adaptor{
-		RegisterWire: NewRegisterWire(uc.RegisterRepo, log),
-		log:          log,
+		RegisterWire: NewRegisterAdaptor(uc.RegisterUseCase, log),
+		AuthAdaptor:  NewAuthAdaptor(uc.AuthUsecase, uc.SessionUsecase, log),
 	}
 }
