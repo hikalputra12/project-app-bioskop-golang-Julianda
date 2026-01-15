@@ -54,7 +54,7 @@ func (c *CinemaAdaptor) GetAllCinemas(w http.ResponseWriter, r *http.Request) {
 
 // get cinemas by id
 func (c *CinemaAdaptor) GetcinemasById(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := chi.URLParam(r, "cinemaId")
 	cinemaID, _ := strconv.Atoi(id)
 
 	// Get data cinemass form service all cinemass
@@ -75,4 +75,37 @@ func (c *CinemaAdaptor) GetcinemasById(w http.ResponseWriter, r *http.Request) {
 		Location: cinemas.Location,
 	}
 	utils.ResponseSuccess(w, http.StatusOK, "success get data", response)
+}
+
+func (c *CinemaAdaptor) GetSeatCinema(w http.ResponseWriter, r *http.Request) {
+	cinemID, err := strconv.Atoi(chi.URLParam(r, "cinemaId"))
+	if err != nil {
+		utils.ResponseBadRequest(w, http.StatusBadRequest, "Invalid cinema ID", nil)
+		return
+	}
+	date := r.URL.Query().Get("date")
+	time := r.URL.Query().Get("time")
+	if date == "" || time == "" {
+		utils.ResponseBadRequest(w, http.StatusBadRequest, "Date and time are required", nil)
+		return
+	}
+
+	ctx := r.Context()
+	// Get data Cinemas form usecase all cinemas
+	seats, err := c.CinemaUsecase.GetSeatCinema(ctx, cinemID, date, time)
+	if err != nil {
+		c.log.Error("failed gewt all cinemas on usecase")
+		utils.ResponseBadRequest(w, http.StatusInternalServerError, "Failed to fetch cinemas: "+err.Error(), nil)
+		return
+	}
+	var response []dto.SeatResponse
+	for _, item := range seats {
+		response = append(response, dto.SeatResponse{
+			SeatNumber: item.SeatNumber,
+			IsAvaiable: item.IsAvaiable,
+		})
+
+	}
+	utils.ResponseSuccess(w, http.StatusOK, "Succses get data", response)
+
 }

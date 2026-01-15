@@ -16,6 +16,7 @@ type CinemaRepo struct {
 type CinemasRepoInterface interface {
 	GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int, error)
 	GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error)
+	GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error)
 }
 
 func NewCinemaRepo(db database.PgxIface, log *zap.Logger) CinemasRepoInterface {
@@ -69,4 +70,32 @@ func (c *CinemaRepo) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema,
 		return nil, err
 	}
 	return &cinemas, nil
+}
+
+func (c *CinemaRepo) GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error) {
+	query := `SELECT s.seat_number, s.is_available FROM seats s 
+JOIN studios st ON st.id=s.studio_id
+JOIN cinemas c ON c.id= st.cinema_id
+JOIN showtimes sh ON sh.studio_id = st.id
+WHERE c.id=$1
+AND TO_CHAR(sh.start_time, 'YYYY-MM-DD') = $2 
+AND TO_CHAR(sh.start_time, 'HH24:MI') = $3;
+
+`
+	rows, err := c.db.Query(ctx, query, id, date, time)
+	if err != nil {
+		c.log.Error("failed to get seat by id on database", zap.Error(err), zap.String("query", query))
+		return nil, err
+	}
+	var seats []*entity.Seat
+	for rows.Next() {
+		var t entity.Seat
+		err := rows.Scan(&t.SeatNumber, &t.IsAvaiable)
+		if err != nil {
+			return nil, err
+		}
+		seats = append(seats, &t)
+	}
+
+	return seats, nil
 }

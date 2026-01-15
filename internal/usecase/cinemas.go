@@ -18,6 +18,7 @@ type CinemaUsecase struct {
 type CinemaUsecaseInterface interface {
 	GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, *dto.Pagination, error)
 	GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error)
+	GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error)
 }
 
 func NewCinemaUsecase(cinemaRepo repository.CinemasRepoInterface, log *zap.Logger) CinemaUsecaseInterface {
@@ -51,4 +52,16 @@ func (c *CinemaUsecase) GetCinemaByID(ctx context.Context, id int) (*entity.Cine
 		return nil, err
 	}
 	return row, nil
+}
+
+func (c *CinemaUsecase) GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error) {
+	rows, err := c.cinemaRepo.GetSeatCinema(ctx, id, date, time)
+	if err != nil {
+		c.log.Error("failed get all seat cinema by id cinema on repository ",
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	return rows, nil
 }
