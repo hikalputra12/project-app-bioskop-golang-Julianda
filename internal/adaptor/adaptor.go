@@ -7,15 +7,19 @@ import (
 )
 
 type Adaptor struct {
-	RegisterWire  *RegisterAdaptor
-	AuthAdaptor   *AuthAdaptor
-	CinemaAdaptor *CinemaAdaptor
+	RegisterWire         *RegisterAdaptor
+	AuthAdaptor          *AuthAdaptor
+	CinemaAdaptor        *CinemaAdaptor
+	PaymentMethodAdaptor *PaymentMethodAdaptor
+	BookingAdaptor       *BookingAdaptor
 }
 
 func AllAdaptor(uc usecase.Usecase, log *zap.Logger) *Adaptor {
 	return &Adaptor{
-		RegisterWire:  NewRegisterAdaptor(uc.RegisterUseCase, log),
-		AuthAdaptor:   NewAuthAdaptor(uc.AuthUsecase, uc.SessionUsecase, log),
-		CinemaAdaptor: NewCinemaAdaptor(uc.CinemaUsecase, log),
+		RegisterWire:         NewRegisterAdaptor(uc.RegisterUseCase, log),
+		AuthAdaptor:          NewAuthAdaptor(uc.AuthUsecase, uc.SessionUsecase, log),
+		CinemaAdaptor:        NewCinemaAdaptor(uc.CinemaUsecase, log),
+		PaymentMethodAdaptor: NewPaymentMethodAdaptor(uc.PaymentMethodUsecase, log),
+		BookingAdaptor:       NewBookingAdaptor(uc.BookingUsecase, log),
 	}
 }

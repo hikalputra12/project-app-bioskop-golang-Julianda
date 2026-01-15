@@ -26,9 +26,11 @@ func Wiring(repo repository.Repository, log *zap.Logger) *chi.Mux {
 		r.Post("/login", adaptor.AuthAdaptor.Login)
 		r.Post("/logout", adaptor.AuthAdaptor.Logout)
 		r.Post("/register", adaptor.RegisterWire.Register)
-		r.With(mw.ValidExtend()).Get("/cinemas", adaptor.CinemaAdaptor.GetAllCinemas)
+		r.Get("/cinemas", adaptor.CinemaAdaptor.GetAllCinemas)
 		r.Get("/cinemas/{cinemaId}", adaptor.CinemaAdaptor.GetcinemasById)
 		r.Get("/cinemas/{cinemaId}/seats", adaptor.CinemaAdaptor.GetSeatCinema)
+		r.Get("/payment-methods", adaptor.PaymentMethodAdaptor.GetAllPaymentMethods)
+		r.With(mw.ValidExtend()).Post("/booking", adaptor.BookingAdaptor.BookingSeat)
 	})
 
 	return r
