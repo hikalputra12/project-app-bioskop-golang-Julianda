@@ -1,6 +1,6 @@
 package dto
 
 type SeatResponse struct {
-	SeatNumber string
+	SeatNumber string 
 	IsAvaiable bool
 }

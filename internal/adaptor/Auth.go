@@ -66,6 +66,7 @@ func (a *AuthAdaptor) Login(w http.ResponseWriter, r *http.Request) {
 		Name:     "session",
 		Value:    uuid,
 		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   expiryTime,
 		HttpOnly: true,
 	})

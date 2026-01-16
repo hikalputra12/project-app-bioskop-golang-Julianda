@@ -19,6 +19,8 @@ type BookingRepoInterface interface {
 	BookingSeat(ctx context.Context, bookingSeat *entity.BookingSeat) error
 	UpdateSeatAvailability(ctx context.Context, seat *entity.Seat) error
 	GetIDByDateTime(ctx context.Context, seatID int, dateStr, timeStr string) (int, error)
+	Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
+	BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error)
 }
 
 func NewBookingRepo(db database.PgxIface, log *zap.Logger) BookingRepoInterface {
@@ -29,8 +31,8 @@ func NewBookingRepo(db database.PgxIface, log *zap.Logger) BookingRepoInterface 
 }
 
 func (b *BookingRepo) BookingSeat(ctx context.Context, bookingSeat *entity.BookingSeat) error {
-	query := `INSERT INTO booking_seat (user_id, showtime_id, seat_id, payment_method_id, created_at)
-SELECT $1, $2, s.id, $4, $5
+	query := `INSERT INTO booking_seat (user_id, showtime_id, seat_id, payment_method_id, status, created_at)
+SELECT $1, $2, s.id, $4,'PANDING', $5
 FROM seats s
 WHERE s.id = $3 
 AND s.is_available = TRUE 
@@ -77,4 +79,48 @@ AND TO_CHAR(sh.start_time, 'HH24:MI') = $3;
 	}
 
 	return showtimeID, nil
+}
+
+func (b *BookingRepo) Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error) {
+	query := `UPDATE booking_seat
+SET status='PAID', payment_details=$1
+WHERE id=$2 AND status='PENDING' AND payment_method_id=$3`
+
+	_, err := b.db.Exec(ctx, query, payment.PaymentDetails, payment.BookingId, payment.PaymentMethodID)
+	if err != nil {
+		b.log.Error("failed to update booking seat status on database", zap.Error(err))
+		return nil, err
+	}
+
+	return payment, nil
+}
+
+func (b *BookingRepo) BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error) {
+	offset := (page - 1) * limit
+	query := `SELECT m.title, m.duration, TO_CHAR(sh.start_time, 'YYYY-MM-DD HH24:MI') AS show_time, c.location
+FROM booking_seat bs
+JOIN showtimes sh ON bs.showtime_id = sh.id
+JOIN movies m ON sh.movie_id = m.id
+JOIN studios st ON sh.studio_id = st.id
+JOIN cinemas c ON st.cinema_id = c.id
+WHERE bs.user_id=$1
+ORDER BY bs.created_at DESC
+LIMIT $2 OFFSET $3;`
+
+	rows, err := b.db.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		b.log.Error("failed to get booking history on database", zap.Error(err))
+		return nil, err
+	}
+	var histories []*entity.BookingHistory
+
+	for rows.Next() {
+		var t entity.BookingHistory
+		err := rows.Scan(&t.MovieTitle, &t.Duration, &t.ShowTime, &t.Location)
+		if err != nil {
+			b.log.Error("failed to scan rows", zap.Error(err))
+		}
+		histories = append(histories, &t)
+	}
+	return histories, nil
 }

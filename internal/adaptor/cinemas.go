@@ -36,7 +36,7 @@ func (c *CinemaAdaptor) GetAllCinemas(w http.ResponseWriter, r *http.Request) {
 	// Get data Cinemas form usecase all cinemas
 	cinemas, pagination, err := c.CinemaUsecase.GetAllCinemas(ctx, page, limit)
 	if err != nil {
-		c.log.Error("failed gewt all cinemas on usecase")
+		c.log.Error("failed get all cinemas on usecase")
 		utils.ResponseBadRequest(w, http.StatusInternalServerError, "Failed to fetch cinemas: "+err.Error(), nil)
 		return
 	}

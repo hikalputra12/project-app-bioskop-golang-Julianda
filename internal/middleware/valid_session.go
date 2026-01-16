@@ -3,6 +3,7 @@ package middleware
 import (
 	"app-bioskop/internal/data/entity"
 	"app-bioskop/pkg/utils"
+	"context"
 	"net/http"
 )
 
@@ -12,12 +13,18 @@ func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
 			//ambil cookie
 			ctx := r.Context()
 			session, err := r.Cookie("session")
+
 			if err != nil {
 				utils.ResponseError(w, http.StatusUnauthorized, "Unauthorized: sesi tidak ditemukan", nil)
 				return
 			}
 			//ambil value dari cookie
 			getSessionID := session.Value
+			//set user id di context
+			userID, err := m.Usecase.SessionUsecase.GetUserIDBySession(ctx, getSessionID)
+
+			ctxUserId := context.WithValue(r.Context(), "user_id", userID)
+
 			sessionID := &entity.Session{
 				ID: getSessionID,
 			}
@@ -52,7 +59,7 @@ func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
 				HttpOnly: true,
 			})
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctxUserId))
 		})
 	}
 }

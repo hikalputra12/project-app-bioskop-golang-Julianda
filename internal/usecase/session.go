@@ -17,7 +17,7 @@ type SessionUsecaseInterface interface {
 	CreateSession(ctx context.Context, session *entity.Session) error
 	RevokedSession(ctx context.Context, session *entity.Session) error
 	ExtendSession(ctx context.Context, session *entity.Session) error
-	GetUserIDBySession(ctx context.Context, session *entity.Session) (int, error)
+	GetUserIDBySession(ctx context.Context, session string) (int, error)
 	IsValid(ctx context.Context, session *entity.Session) (bool, error)
 }
 
@@ -50,7 +50,7 @@ func (s *SessionUsecase) ExtendSession(ctx context.Context, session *entity.Sess
 	}
 	return nil
 }
-func (s *SessionUsecase) GetUserIDBySession(ctx context.Context, session *entity.Session) (int, error) {
+func (s *SessionUsecase) GetUserIDBySession(ctx context.Context, session string) (int, error) {
 	userID, err := s.sessionRepo.GetUserIDBySession(ctx, session)
 	if err != nil {
 		s.log.Error("failed to get user id on reposioty", zap.Error(err))

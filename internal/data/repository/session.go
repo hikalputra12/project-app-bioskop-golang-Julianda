@@ -17,7 +17,7 @@ type SessionRepoInterface interface {
 	CreateSession(ctx context.Context, session *entity.Session) error
 	RevokedSession(ctx context.Context, session *entity.Session) error
 	ExtendSession(ctx context.Context, session *entity.Session) error
-	GetUserIDBySession(ctx context.Context, session *entity.Session) (int, error)
+	GetUserIDBySession(ctx context.Context, session string) (int, error)
 	IsValid(ctx context.Context, session *entity.Session) (bool, error)
 }
 
@@ -75,11 +75,12 @@ func (s *SessionRepo) IsValid(ctx context.Context, session *entity.Session) (boo
 	return valid, err
 }
 
-func (r *SessionRepo) GetUserIDBySession(ctx context.Context, session *entity.Session) (int, error) {
+// mendapatkan user id dari session saat itu
+func (s *SessionRepo) GetUserIDBySession(ctx context.Context, session string) (int, error) {
 	var userID int
-	query := `SELECT user_id FROM sessions WHERE session_id = $1 AND revoked_at IS NULL`
+	query := `SELECT user_id FROM sessions WHERE id = $1 AND revoked_at IS NULL AND expired_at > NOW()`
 
-	err := r.db.QueryRow(ctx, query, session.ID).Scan(&userID)
+	err := s.db.QueryRow(ctx, query, session).Scan(&userID)
 	if err != nil {
 		return 0, err
 	}

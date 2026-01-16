@@ -17,6 +17,8 @@ type BookingUsecaseInterface interface {
 	BookingSeat(ctx context.Context, bookingSeat *entity.BookingSeat) error
 	UpdateSeatAvailability(ctx context.Context, seat *entity.Seat) error
 	GetIDByDateTime(ctx context.Context, seatID int, dateStr, timeStr string) (int, error)
+	Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
+	BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error)
 }
 
 func NewBookingUsecase(bookingUsecase repository.BookingRepoInterface, log *zap.Logger) BookingUsecaseInterface {
@@ -51,4 +53,22 @@ func (b *BookingUsecase) GetIDByDateTime(ctx context.Context, seatID int, dateSt
 		return 0, err
 	}
 	return showtimeID, nil
+}
+
+func (b *BookingUsecase) BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error) {
+	history, err := b.bookingUsecase.BookingHistory(ctx, page, limit, userID)
+	if err != nil {
+		b.log.Error("failed to get booking history on repository", zap.Error(err))
+		return nil, err
+	}
+	return history, nil
+}
+
+func (b *BookingUsecase) Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error) {
+	pay, err := b.bookingUsecase.Payment(ctx, payment)
+	if err != nil {
+		b.log.Error("failed to process payment on repository", zap.Error(err))
+		return nil, err
+	}
+	return pay, nil
 }
