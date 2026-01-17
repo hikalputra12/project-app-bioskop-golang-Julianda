@@ -22,6 +22,6 @@ func main() {
 	defer db.Close()
 
 	repo := repository.AllRepository(db, logger)
-	router := wire.Wiring(*repo, logger)
+	router := wire.Wiring(repo, logger)
 	cmd.APiserver(router)
 }

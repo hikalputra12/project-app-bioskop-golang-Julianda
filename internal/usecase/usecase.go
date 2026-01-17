@@ -15,7 +15,7 @@ type Usecase struct {
 	BookingUsecase       BookingUsecaseInterface
 }
 
-func AllUseCase(repo repository.Repository, log *zap.Logger) Usecase {
+func AllUseCase(repo *repository.Repository, log *zap.Logger) Usecase {
 	return Usecase{
 		RegisterUseCase:      NewRegisterUseCase(repo.RegisterRepo, log),
 		AuthUsecase:          NewAuthUsecase(repo.AuthRepo, log),

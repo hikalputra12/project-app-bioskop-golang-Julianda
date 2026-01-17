@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
@@ -16,11 +17,12 @@ type BookingRepo struct {
 }
 
 type BookingRepoInterface interface {
-	BookingSeat(ctx context.Context, bookingSeat *entity.BookingSeat) error
-	UpdateSeatAvailability(ctx context.Context, seat *entity.Seat) error
+	BookingSeat(ctx context.Context, tx pgx.Tx, bookingSeat *entity.BookingSeat) error
+	UpdateSeatAvailability(ctx context.Context, tx pgx.Tx, seatID int) error
 	GetIDByDateTime(ctx context.Context, seatID int, dateStr, timeStr string) (int, error)
 	Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
 	BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 func NewBookingRepo(db database.PgxIface, log *zap.Logger) BookingRepoInterface {
@@ -30,16 +32,16 @@ func NewBookingRepo(db database.PgxIface, log *zap.Logger) BookingRepoInterface 
 	}
 }
 
-func (b *BookingRepo) BookingSeat(ctx context.Context, bookingSeat *entity.BookingSeat) error {
+func (b *BookingRepo) BookingSeat(ctx context.Context, tx pgx.Tx, bookingSeat *entity.BookingSeat) error {
 	query := `INSERT INTO booking_seat (user_id, showtime_id, seat_id, payment_method_id, status, created_at)
-SELECT $1, $2, s.id, $4,'PANDING', $5
+SELECT $1, $2, s.id, $4,'PENDING', $5
 FROM seats s
 WHERE s.id = $3 
 AND s.is_available = TRUE 
 RETURNING id;`
 
 	now := time.Now()
-	err := b.db.QueryRow(ctx, query, bookingSeat.UserID, bookingSeat.ShowtimeId, bookingSeat.SeatId, bookingSeat.PaymentMethod, now).Scan(&bookingSeat.ID)
+	err := tx.QueryRow(ctx, query, bookingSeat.UserID, bookingSeat.ShowtimeId, bookingSeat.SeatId, bookingSeat.PaymentMethod, now).Scan(&bookingSeat.ID)
 	if err != nil {
 		b.log.Error("failed to create booking seat on database", zap.Error(err))
 		return err
@@ -49,10 +51,10 @@ RETURNING id;`
 
 }
 
-func (b *BookingRepo) UpdateSeatAvailability(ctx context.Context, seat *entity.Seat) error {
+func (b *BookingRepo) UpdateSeatAvailability(ctx context.Context, tx pgx.Tx, seatID int) error {
 	query := `UPDATE seats SET is_available = false, updated_at = $1 WHERE id = $2`
 	now := time.Now()
-	_, err := b.db.Exec(ctx, query, now, seat.ID)
+	_, err := tx.Exec(ctx, query, now, seatID)
 	if err != nil {
 		b.log.Error("failed to update seat availability on database", zap.Error(err))
 		return err
@@ -123,4 +125,15 @@ LIMIT $2 OFFSET $3;`
 		histories = append(histories, &t)
 	}
 	return histories, nil
+}
+
+// method untuk memulai transaksi
+func (b *BookingRepo) Begin(ctx context.Context) (pgx.Tx, error) {
+	tx, err := b.db.Begin(ctx)
+	if err != nil {
+		b.log.Error("failed to create transaction", zap.Error(err))
+		return nil, err
+	}
+	return tx, nil
+
 }

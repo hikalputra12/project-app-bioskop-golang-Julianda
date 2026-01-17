@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Wiring(repo repository.Repository, log *zap.Logger) *chi.Mux {
+func Wiring(repo *repository.Repository, log *zap.Logger) *chi.Mux {
 
 	useCase := usecase.AllUseCase(repo, log)
 	adaptor := adaptor.AllAdaptor(useCase, log)

@@ -34,45 +34,17 @@ func (b *BookingAdaptor) BookingSeat(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseBadRequest(w, http.StatusBadRequest, "Invalid JSON format", nil)
 		return
 	}
-	userID := r.Context().Value("user_id").(int)
 
-	for _, seatID := range req.SeatIds {
-		showtimeID, err := b.bookingUsecase.GetIDByDateTime(ctx, seatID, req.Date, req.Time)
-		if err != nil {
-			b.log.Error("failed get showtime id by date time on service",
-				zap.Error(err),
-			)
-			utils.ResponseError(w, http.StatusBadRequest, "input tidak sesuai format yang di tentukan", nil)
-			return
-		}
-		newBookingSeat := entity.BookingSeat{
-			UserID:        userID,
-			ShowtimeId:    showtimeID,
-			SeatId:        seatID,
-			PaymentMethod: req.PaymentMethod,
-		}
-		err = b.bookingUsecase.BookingSeat(ctx, &newBookingSeat)
-		if err != nil {
-			b.log.Error("failed booking seat on service",
-				zap.Error(err),
-			)
-			utils.ResponseError(w, http.StatusBadRequest, "input tidak sesuai format yang di tentukan", nil)
-			return
-		}
-		seat := entity.Seat{
-			Entity: entity.Entity{
-				ID: seatID,
-			},
-		}
-		err = b.bookingUsecase.UpdateSeatAvailability(ctx, &seat)
-		if err != nil {
-			b.log.Error("failed update seat availability on service",
-				zap.Error(err),
-			)
-			utils.ResponseError(w, http.StatusBadRequest, "input tidak sesuai format yang di tentukan", nil)
-			return
-		}
+	userID := r.Context().Value("user_id").(int)
+	err := b.bookingUsecase.BookingSeat(ctx, req, userID)
+	if err != nil {
+		b.log.Error("failed booking seat on service",
+			zap.Error(err),
+		)
+		utils.ResponseError(w, http.StatusInternalServerError, "input tidak sesuai format yang di tentukan", nil)
+		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
