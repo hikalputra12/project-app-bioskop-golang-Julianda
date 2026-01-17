@@ -4,7 +4,9 @@ import (
 	"app-bioskop/internal/data/entity"
 	"app-bioskop/pkg/database"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,7 +22,7 @@ type BookingRepoInterface interface {
 	BookingSeat(ctx context.Context, tx pgx.Tx, bookingSeat *entity.BookingSeat) error
 	UpdateSeatAvailability(ctx context.Context, tx pgx.Tx, seatID int) error
 	GetIDByDateTime(ctx context.Context, seatID int, dateStr, timeStr string) (int, error)
-	Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
+	Payment(ctx context.Context, tx pgx.Tx, payment *entity.Payment) (*entity.Payment, error)
 	BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error)
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
@@ -83,15 +85,27 @@ AND TO_CHAR(sh.start_time, 'HH24:MI') = $3;
 	return showtimeID, nil
 }
 
-func (b *BookingRepo) Payment(ctx context.Context, payment *entity.Payment) (*entity.Payment, error) {
+func (b *BookingRepo) Payment(ctx context.Context, tx pgx.Tx, payment *entity.Payment) (*entity.Payment, error) {
 	query := `UPDATE booking_seat
 SET status='PAID', payment_details=$1
-WHERE id=$2 AND status='PENDING' AND payment_method_id=$3`
-
-	_, err := b.db.Exec(ctx, query, payment.PaymentDetails, payment.BookingId, payment.PaymentMethodID)
+WHERE id=$2 AND user_id=$3 AND status='PENDING' AND payment_method_id=$4`
+	// 1. Ubah struct details ke JSON String (Wajib untuk kolom JSONB/Text)
+	detailsJSON, err := json.Marshal(payment.PaymentDetails)
 	if err != nil {
-		b.log.Error("failed to update booking seat status on database", zap.Error(err))
 		return nil, err
+	}
+
+	cmdTag, err := tx.Exec(ctx, query, detailsJSON, payment.BookingId, payment.UserID, payment.PaymentMethodID)
+	if err != nil {
+		b.log.Info("DEBUG PAYMENT",
+			zap.Int("Input_BookingID", payment.BookingId),
+			zap.Int("Input_UserID", payment.UserID),
+			zap.Int("Input_MethodID", payment.PaymentMethodID),
+		)
+		return nil, err
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return nil, fmt.Errorf("payment failed: booking not found or status invalid")
 	}
 
 	return payment, nil

@@ -1,7 +1,6 @@
 package adaptor
 
 import (
-	"app-bioskop/internal/data/entity"
 	"app-bioskop/internal/dto"
 	"app-bioskop/internal/usecase"
 	"app-bioskop/pkg/utils"
@@ -71,7 +70,7 @@ func (b *BookingAdaptor) BookingHistory(w http.ResponseWriter, r *http.Request) 
 		b.log.Error("failed get booking history on service",
 			zap.Error(err),
 		)
-		utils.ResponseError(w, http.StatusBadRequest, "input tidak sesuai format yang di tentukan", nil)
+		utils.ResponseError(w, http.StatusInternalServerError, "failed to get booking history", nil)
 		return
 	}
 
@@ -93,23 +92,17 @@ func (b *BookingAdaptor) Payment(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseBadRequest(w, http.StatusBadRequest, "Invalid JSON format", nil)
 		return
 	}
-
-	payment := &entity.Payment{
-		BookingId:       req.BookingId,
-		PaymentMethodID: req.PaymentMethod,
-		PaymentDetails: entity.PaymentDetails{
-			CardNumber: req.PaymentDetails.CardNumber,
-			CVV:        req.PaymentDetails.CVV,
-			ExpiryDate: req.PaymentDetails.ExpiryDate,
-		},
-	}
-
-	_, err := b.bookingUsecase.Payment(ctx, payment)
+	userID := r.Context().Value("user_id").(int)
+	cmdTag, err := b.bookingUsecase.Payment(ctx, req, userID)
 	if err != nil {
 		b.log.Error("failed payment on service",
 			zap.Error(err),
 		)
-		utils.ResponseError(w, http.StatusBadRequest, "input tidak sesuai format yang di tentukan", nil)
+		utils.ResponseError(w, http.StatusInternalServerError, "payment failed", nil)
+		return
+	}
+	if cmdTag == nil {
+		utils.ResponseError(w, http.StatusBadRequest, "payment failed: booking not found or status invalid", nil)
 		return
 	}
 

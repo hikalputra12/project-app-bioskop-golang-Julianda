@@ -13,6 +13,7 @@ type PaymentDetails struct {
 	ExpiryDate string `json:"expiry_date" validate:"required,datetime=01/06"`
 }
 type PaymentRequest struct {
+	UserID         int            `json:"user_id,omitempty"`
 	PaymentDetails PaymentDetails `json:"payment_details" validate:"required,dive"`
 	PaymentMethod  int            `json:"payment_method,omitempty"`
 	BookingId      int            `json:"booking_id" validate:"required"`
