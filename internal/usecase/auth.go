@@ -3,6 +3,7 @@ package usecase
 import (
 	"app-bioskop/internal/data/entity"
 	"app-bioskop/internal/data/repository"
+	"app-bioskop/internal/dto"
 	"app-bioskop/pkg/utils"
 	"context"
 	"errors"
@@ -12,32 +13,48 @@ import (
 
 type AuthUsecase struct {
 	AuthRepo repository.AuthRepoInterface
+	Session  repository.SessionRepoInterface
 	log      *zap.Logger
 }
 
 type AuthUsecaseInterface interface {
-	Login(ctx context.Context, email, password string) (*entity.User, error)
+	Login(ctx context.Context, req dto.LoginRequest) (string, error)
 }
 
-func NewAuthUsecase(authRepo repository.AuthRepoInterface, log *zap.Logger) AuthUsecaseInterface {
+func NewAuthUsecase(authRepo repository.AuthRepoInterface, Session repository.SessionRepoInterface, log *zap.Logger) AuthUsecaseInterface {
 	return &AuthUsecase{
 		AuthRepo: authRepo,
+		Session:  Session,
 		log:      log,
 	}
 }
 
-func (u *AuthUsecase) Login(ctx context.Context, email, password string) (*entity.User, error) {
-	user, err := u.AuthRepo.FindByEmail(ctx, email)
+func (u *AuthUsecase) Login(ctx context.Context, req dto.LoginRequest) (string, error) {
+	user, err := u.AuthRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
 		u.log.Warn("Login attempt failed: email not found",
-			zap.String("email", email))
-		return nil, errors.New("user not found")
+			zap.String("email", req.Email))
+		return "", errors.New("user not found")
 	}
-	if !utils.CompareHashAndPassword([]byte(user.Password), []byte(password)) {
+	if !utils.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)) {
 		u.log.Warn("Login attempt failed: password is incorrect",
-			zap.String("password", password),
+			zap.String("password", req.Password),
 		)
-		return nil, errors.New("incorrect password")
+		return "", errors.New("incorrect password")
 	}
-	return user, nil
+	uuid := utils.NewUUID()
+
+	session := &entity.Session{
+		ID:     uuid,
+		UserID: user.ID,
+	}
+	err = u.Session.CreateSession(ctx, session)
+	if err != nil {
+		u.log.Error("failed create session on usercase",
+			zap.Error(err),
+		)
+		return "", errors.New("failed to create session")
+	}
+
+	return uuid, nil
 }

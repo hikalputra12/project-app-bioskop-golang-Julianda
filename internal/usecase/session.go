@@ -15,7 +15,7 @@ type SessionUsecase struct {
 
 type SessionUsecaseInterface interface {
 	CreateSession(ctx context.Context, session *entity.Session) error
-	RevokedSession(ctx context.Context, session *entity.Session) error
+	RevokedSession(ctx context.Context, revoke string) error
 	ExtendSession(ctx context.Context, session *entity.Session) error
 	GetUserIDBySession(ctx context.Context, session string) (int, error)
 	IsValid(ctx context.Context, session *entity.Session) (bool, error)
@@ -36,8 +36,8 @@ func (s *SessionUsecase) CreateSession(ctx context.Context, session *entity.Sess
 	}
 	return nil
 }
-func (s *SessionUsecase) RevokedSession(ctx context.Context, session *entity.Session) error {
-	if err := s.sessionRepo.RevokedSession(ctx, session); err != nil {
+func (s *SessionUsecase) RevokedSession(ctx context.Context, revoke string) error {
+	if err := s.sessionRepo.RevokedSession(ctx, revoke); err != nil {
 		s.log.Error("failed to revoke session on reposioty", zap.Error(err))
 		return err
 	}

@@ -3,6 +3,7 @@ package usecase
 import (
 	"app-bioskop/internal/data/entity"
 	"app-bioskop/internal/data/repository"
+	"app-bioskop/internal/dto"
 	"app-bioskop/pkg/utils"
 	"context"
 
@@ -15,7 +16,7 @@ type RegisterUseCase struct {
 }
 
 type RegisterUseCaseInterface interface {
-	RegisterAccount(ctx context.Context, register *entity.RegisterUser) error
+	RegisterAccount(ctx context.Context, req dto.RegisterRequest) error
 }
 
 func NewRegisterUseCase(registerRepo repository.RegisterInterface, log *zap.Logger) RegisterUseCaseInterface {
@@ -25,12 +26,13 @@ func NewRegisterUseCase(registerRepo repository.RegisterInterface, log *zap.Logg
 	}
 }
 
-func (u *RegisterUseCase) RegisterAccount(ctx context.Context, register *entity.RegisterUser) error {
-	passwordHash := utils.HashPassword(register.Password)
+func (u *RegisterUseCase) RegisterAccount(ctx context.Context, req dto.RegisterRequest) error {
+
+	passwordHash := utils.HashPassword(req.Password)
 	newUser := &entity.RegisterUser{
-		Name:     register.Name,
-		Email:    register.Email,
-		Phone:    register.Phone,
+		Name:     req.Name,
+		Email:    req.Email,
+		Phone:    req.Phone,
 		Password: passwordHash,
 	}
 	err := u.registerRepo.RegisterAccount(ctx, newUser)

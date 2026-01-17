@@ -15,7 +15,7 @@ type SessionRepo struct {
 }
 type SessionRepoInterface interface {
 	CreateSession(ctx context.Context, session *entity.Session) error
-	RevokedSession(ctx context.Context, session *entity.Session) error
+	RevokedSession(ctx context.Context, revoke string) error
 	ExtendSession(ctx context.Context, session *entity.Session) error
 	GetUserIDBySession(ctx context.Context, session string) (int, error)
 	IsValid(ctx context.Context, session *entity.Session) (bool, error)
@@ -44,10 +44,10 @@ func (s *SessionRepo) CreateSession(ctx context.Context, session *entity.Session
 	return nil
 }
 
-func (s *SessionRepo) RevokedSession(ctx context.Context, session *entity.Session) error {
+func (s *SessionRepo) RevokedSession(ctx context.Context, revoke string) error {
 	query := `UPDATE sessions SET revoked_at=NOW()  WHERE id=$1 AND revoked_at is NULL`
 
-	_, err := s.db.Exec(ctx, query, session.ID)
+	_, err := s.db.Exec(ctx, query, revoke)
 	if err != nil {
 		s.log.Error("failed to update revoke on database", zap.Error(err), zap.String("query", query))
 		return err

@@ -1,7 +1,6 @@
 package adaptor
 
 import (
-	"app-bioskop/internal/data/entity"
 	"app-bioskop/internal/dto"
 	"app-bioskop/internal/usecase"
 	"app-bioskop/pkg/utils"
@@ -32,13 +31,20 @@ func (h *RegisterAdaptor) Register(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseBadRequest(w, http.StatusBadRequest, "Invalid JSON format", nil)
 		return
 	}
-	newUser := entity.RegisterUser{
-		Name:     req.Name,
-		Phone:    req.Phone,
-		Email:    req.Email,
-		Password: req.Password,
+	validationErrors, err := utils.ValidateErrors(req)
+	if err != nil {
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Validation failed",
+			"errors":  validationErrors,
+		})
+		return
 	}
-	err := h.RegisterUseCase.RegisterAccount(ctx, &newUser)
+
+	err = h.RegisterUseCase.RegisterAccount(ctx, req)
 	if err != nil {
 		h.log.Error("failed register user on service",
 			zap.Error(err),

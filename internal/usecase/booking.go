@@ -54,6 +54,7 @@ func (b *BookingUsecase) BookingSeat(ctx context.Context, req dto.BookingRequest
 			b.log.Error("failed booking seat on service",
 				zap.Error(err),
 			)
+			return err
 		}
 		//update seat to database
 		err = b.bookingUsecase.UpdateSeatAvailability(ctx, tx, seatID)
@@ -61,6 +62,7 @@ func (b *BookingUsecase) BookingSeat(ctx context.Context, req dto.BookingRequest
 			b.log.Error("failed update seat availability on service",
 				zap.Error(err),
 			)
+			return err
 		}
 	}
 	// Commit: meyimpan perubahan permanen jika semua loop sukses

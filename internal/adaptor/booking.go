@@ -98,7 +98,8 @@ func (b *BookingAdaptor) Payment(w http.ResponseWriter, r *http.Request) {
 		b.log.Error("failed payment on service",
 			zap.Error(err),
 		)
-		utils.ResponseError(w, http.StatusInternalServerError, "payment failed", nil)
+		// Status 409 Conflict biasanya cocok untuk resource yang sudah diambil
+		utils.ResponseError(w, http.StatusConflict, err.Error(), nil)
 		return
 	}
 	if cmdTag == nil {

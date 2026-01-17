@@ -18,7 +18,7 @@ type Usecase struct {
 func AllUseCase(repo *repository.Repository, log *zap.Logger) Usecase {
 	return Usecase{
 		RegisterUseCase:      NewRegisterUseCase(repo.RegisterRepo, log),
-		AuthUsecase:          NewAuthUsecase(repo.AuthRepo, log),
+		AuthUsecase:          NewAuthUsecase(repo.AuthRepo, repo.SessionRepo, log),
 		SessionUsecase:       NewSessionUsecase(repo.SessionRepo, log),
 		CinemaUsecase:        NewCinemaUsecase(repo.CinemaRepo, log),
 		PaymentMethodUsecase: NewPaymentMethodUsecase(repo.PaymentMethodRepo, log),

@@ -1,7 +1,6 @@
 package adaptor
 
 import (
-	"app-bioskop/internal/data/entity"
 	"app-bioskop/internal/dto"
 	"app-bioskop/internal/usecase"
 	"app-bioskop/pkg/utils"
@@ -30,6 +29,7 @@ func (a *AuthAdaptor) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.ResponseBadRequest(w, http.StatusBadRequest, "unvalid format", nil)
+		return
 	}
 	validationErrors, err := utils.ValidateErrors(req)
 	if err != nil {
@@ -45,26 +45,21 @@ func (a *AuthAdaptor) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	user, err := a.AuthUsecase.Login(ctx, req.Email, req.Password)
-	uuid := utils.NewUUID()
-
-	session := &entity.Session{
-		ID:     uuid,
-		UserID: user.ID,
-	}
-	err = a.SessionUsecase.CreateSession(ctx, session)
+	sessionID, err := a.AuthUsecase.Login(ctx, req)
 	if err != nil {
-		a.log.Error("failed create session on usercase",
+		a.log.Error("failed login user on usecase",
 			zap.Error(err),
 		)
-		utils.ResponseError(w, http.StatusInternalServerError, "failed to proccess login session", nil)
+		utils.ResponseError(w, http.StatusUnauthorized, "email or password incorrect", nil)
 		return
 	}
+
+	//pembuatan cookie saat login
 
 	expiryTime := 24 * 60 * 60
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
-		Value:    uuid,
+		Value:    sessionID,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   expiryTime,
@@ -89,12 +84,9 @@ func (a *AuthAdaptor) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//pembuatan revoke saat logout
-	sessionID := cookie.Value
-	revoke := &entity.Session{
-		ID: sessionID,
-	}
+	revokedSession := cookie.Value
 
-	err = a.SessionUsecase.RevokedSession(ctx, revoke)
+	err = a.SessionUsecase.RevokedSession(ctx, revokedSession)
 	if err != nil {
 		a.log.Error("failed revoke session on usercase",
 			zap.Error(err),

@@ -119,7 +119,7 @@ JOIN showtimes sh ON bs.showtime_id = sh.id
 JOIN movies m ON sh.movie_id = m.id
 JOIN studios st ON sh.studio_id = st.id
 JOIN cinemas c ON st.cinema_id = c.id
-WHERE bs.user_id=$1
+WHERE bs.user_id=$1 AND bs.status='PAID'
 ORDER BY bs.created_at DESC
 LIMIT $2 OFFSET $3;`
 
