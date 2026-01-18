@@ -24,6 +24,7 @@ func NewPaymentMethod(db database.PgxIface, log *zap.Logger) PaymentMethodInterf
 	}
 }
 
+// get all payment methods
 func (p *PaymentMethodRepo) GetAllPaymentMethods(ctx context.Context) ([]*entity.PaymentMethod, error) {
 	query := `SELECT name,logo_url FROM payment_methods
 ORDER BY id ASC `

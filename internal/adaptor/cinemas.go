@@ -23,6 +23,7 @@ func NewCinemaAdaptor(CinemaUsecase usecase.CinemaUsecaseInterface, log *zap.Log
 	}
 }
 
+// get all cinemas
 func (c *CinemaAdaptor) GetAllCinemas(w http.ResponseWriter, r *http.Request) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
@@ -77,6 +78,7 @@ func (c *CinemaAdaptor) GetcinemasById(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseSuccess(w, http.StatusOK, "success get data", response)
 }
 
+// get seat cinema by date and time
 func (c *CinemaAdaptor) GetSeatCinema(w http.ResponseWriter, r *http.Request) {
 	cinemID, err := strconv.Atoi(chi.URLParam(r, "cinemaId"))
 	if err != nil {

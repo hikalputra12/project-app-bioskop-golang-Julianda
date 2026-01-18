@@ -5,4 +5,5 @@ type RegisterRequest struct {
 	Phone    string `json:"phone_number" validate:"required,min=10"`
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
+	Otp      string `json:"otp"`
 }

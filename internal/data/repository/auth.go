@@ -23,6 +23,8 @@ func NewAuthRepo(db database.PgxIface, log *zap.Logger) AuthRepoInterface {
 		log: log,
 	}
 }
+
+// FindByEmail retrieves a user by their email address.
 func (r *AuthRepo) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user entity.User
 	query := `SELECT id, created_at, updated_at, deleted_at, username, email, password_hash, phone_number

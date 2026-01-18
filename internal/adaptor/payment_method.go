@@ -21,6 +21,7 @@ func NewPaymentMethodAdaptor(paymentMethodUsecase usecase.PaymentMethodUsecaseIn
 	}
 }
 
+// get all payment methods
 func (p *PaymentMethodAdaptor) GetAllPaymentMethods(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	paymentMethod, err := p.PaymentMethodUsecase.GetAllPaymentMethods(ctx)

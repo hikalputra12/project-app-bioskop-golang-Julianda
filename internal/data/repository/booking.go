@@ -34,6 +34,7 @@ func NewBookingRepo(db database.PgxIface, log *zap.Logger) BookingRepoInterface 
 	}
 }
 
+// function to book seat
 func (b *BookingRepo) BookingSeat(ctx context.Context, tx pgx.Tx, bookingSeat *entity.BookingSeat) error {
 	query := `INSERT INTO booking_seat (user_id, showtime_id, seat_id, payment_method_id, status, created_at)
 SELECT $1, $2, s.id, $4,'PENDING', $5
@@ -53,6 +54,7 @@ RETURNING id;`
 
 }
 
+// function to update seat availability
 func (b *BookingRepo) UpdateSeatAvailability(ctx context.Context, tx pgx.Tx, seatID int) error {
 	query := `UPDATE seats SET is_available = false, updated_at = $1 WHERE id = $2`
 	now := time.Now()
@@ -85,6 +87,7 @@ AND TO_CHAR(sh.start_time, 'HH24:MI') = $3;
 	return showtimeID, nil
 }
 
+// function payment repository
 func (b *BookingRepo) Payment(ctx context.Context, tx pgx.Tx, payment *entity.Payment) (*entity.Payment, error) {
 	query := `UPDATE booking_seat
 SET status='PAID', payment_details=$1
@@ -111,6 +114,7 @@ WHERE id=$2 AND user_id=$3 AND status='PENDING' AND payment_method_id=$4`
 	return payment, nil
 }
 
+// function booking history repository
 func (b *BookingRepo) BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error) {
 	offset := (page - 1) * limit
 	query := `SELECT m.title, m.duration, TO_CHAR(sh.start_time, 'YYYY-MM-DD HH24:MI') AS show_time, c.location

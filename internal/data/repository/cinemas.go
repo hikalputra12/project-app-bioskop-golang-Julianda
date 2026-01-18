@@ -26,6 +26,7 @@ func NewCinemaRepo(db database.PgxIface, log *zap.Logger) CinemasRepoInterface {
 	}
 }
 
+// get all cinemas
 func (c *CinemaRepo) GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int, error) {
 	//menghitung offset
 	offset := (page - 1) * limit
@@ -61,6 +62,7 @@ func (c *CinemaRepo) GetAllCinemas(ctx context.Context, page, limit int) ([]*ent
 	return cinemas, total, nil
 }
 
+// get cinemas by id
 func (c *CinemaRepo) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error) {
 	var cinemas entity.Cinema
 	query := `SELECT name,location from cinemas WHERE id=$1;`
@@ -72,6 +74,7 @@ func (c *CinemaRepo) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema,
 	return &cinemas, nil
 }
 
+// get seat cinema by date and time
 func (c *CinemaRepo) GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error) {
 	query := `SELECT s.seat_number, s.is_available FROM seats s 
 JOIN studios st ON st.id=s.studio_id

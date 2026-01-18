@@ -24,6 +24,7 @@ func NewAuthAdaptor(uc usecase.AuthUsecaseInterface, SessionUsecase usecase.Sess
 	}
 }
 
+// function login adaptor
 func (a *AuthAdaptor) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
 
@@ -75,6 +76,7 @@ func (a *AuthAdaptor) Login(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// function logout adaptor
 func (a *AuthAdaptor) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	ctx := r.Context()

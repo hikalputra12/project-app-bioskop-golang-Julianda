@@ -13,6 +13,7 @@ type Repository struct {
 	CinemaRepo        CinemasRepoInterface
 	PaymentMethodRepo PaymentMethodInterface
 	BookingRepo       BookingRepoInterface
+	VerifyRepo        VerifyInterface
 }
 
 func AllRepository(db database.PgxIface, log *zap.Logger) *Repository {
@@ -23,5 +24,6 @@ func AllRepository(db database.PgxIface, log *zap.Logger) *Repository {
 		CinemaRepo:        NewCinemaRepo(db, log),
 		PaymentMethodRepo: NewPaymentMethod(db, log),
 		BookingRepo:       NewBookingRepo(db, log),
+		VerifyRepo:        NewVerifyRepo(db, log),
 	}
 }

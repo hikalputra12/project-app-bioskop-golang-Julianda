@@ -5,6 +5,8 @@ import (
 	"app-bioskop/internal/data/repository"
 	"app-bioskop/internal/middleware"
 	"app-bioskop/internal/usecase"
+	"app-bioskop/pkg/utils"
+	"sync"
 
 	mid "github.com/go-chi/chi/v5/middleware"
 
@@ -12,9 +14,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func Wiring(repo *repository.Repository, log *zap.Logger) *chi.Mux {
-
-	useCase := usecase.AllUseCase(repo, log)
+func Wiring(repo *repository.Repository, log *zap.Logger, config utils.SMTPConfig) *chi.Mux {
+	emailJobs := make(chan utils.EmailJob, 10) // BUFFER
+	stop := make(chan struct{})
+	metrics := &utils.Metrics{}
+	wg := &sync.WaitGroup{}
+	utils.StartEmailWorkers(3, emailJobs, stop, metrics, wg, config)
+	useCase := usecase.AllUseCase(repo, log, emailJobs)
 	adaptor := adaptor.AllAdaptor(useCase, log)
 
 	r := chi.NewRouter()
@@ -26,6 +32,7 @@ func Wiring(repo *repository.Repository, log *zap.Logger) *chi.Mux {
 		r.Post("/login", adaptor.AuthAdaptor.Login)
 		r.Post("/logout", adaptor.AuthAdaptor.Logout)
 		r.Post("/register", adaptor.RegisterWire.Register)
+		r.Post("/verify-otp", adaptor.VerifyAdaptor.SomeVerifyFunction)
 		r.Get("/cinemas", adaptor.CinemaAdaptor.GetAllCinemas)
 		r.Get("/cinemas/{cinemaId}", adaptor.CinemaAdaptor.GetcinemasById)
 		r.Get("/cinemas/{cinemaId}/seats", adaptor.CinemaAdaptor.GetSeatCinema)

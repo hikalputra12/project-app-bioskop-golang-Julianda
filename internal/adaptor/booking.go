@@ -24,6 +24,7 @@ func NewBookingAdaptor(bookingUsecase usecase.BookingUsecaseInterface, log *zap.
 	}
 }
 
+// function booking seat adaptor
 func (b *BookingAdaptor) BookingSeat(w http.ResponseWriter, r *http.Request) {
 	var req dto.BookingRequest
 	ctx := r.Context()
@@ -52,6 +53,7 @@ func (b *BookingAdaptor) BookingSeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// funtion to get booking history adaptor
 func (b *BookingAdaptor) BookingHistory(w http.ResponseWriter, r *http.Request) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
@@ -83,6 +85,7 @@ func (b *BookingAdaptor) BookingHistory(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// function payment adaptor
 func (b *BookingAdaptor) Payment(w http.ResponseWriter, r *http.Request) {
 	var req dto.PaymentRequest
 	ctx := r.Context()

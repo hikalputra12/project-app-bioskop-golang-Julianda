@@ -28,6 +28,7 @@ func NewSessionRepo(db database.PgxIface, log *zap.Logger) SessionRepoInterface 
 	}
 }
 
+// create new session
 func (s *SessionRepo) CreateSession(ctx context.Context, session *entity.Session) error {
 	query := `INSERT INTO sessions (id,user_id, expired_at ,last_active, created_at) 
 			VALUES ($1, $2, $3,$4,$5)`
@@ -44,6 +45,7 @@ func (s *SessionRepo) CreateSession(ctx context.Context, session *entity.Session
 	return nil
 }
 
+// revoke session
 func (s *SessionRepo) RevokedSession(ctx context.Context, revoke string) error {
 	query := `UPDATE sessions SET revoked_at=NOW()  WHERE id=$1 AND revoked_at is NULL`
 
@@ -54,6 +56,8 @@ func (s *SessionRepo) RevokedSession(ctx context.Context, revoke string) error {
 	}
 	return nil
 }
+
+// extend session
 func (s *SessionRepo) ExtendSession(ctx context.Context, session *entity.Session) error {
 	query := `UPDATE sessions SET id=$1, expired_at=$2 ,last_active=NOW() WHERE id=$3 AND revoked_at is NULL`
 	expired := time.Now().Add(24 * time.Hour)
@@ -67,6 +71,7 @@ func (s *SessionRepo) ExtendSession(ctx context.Context, session *entity.Session
 	return nil
 }
 
+// check is session valid
 func (s *SessionRepo) IsValid(ctx context.Context, session *entity.Session) (bool, error) {
 	query := `SELECT EXISTS(
 			  SELECT 1 FROM sessions WHERE id=$1 AND revoked_at is NULL AND expired_at > NOW() )`

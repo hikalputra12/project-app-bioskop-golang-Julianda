@@ -25,6 +25,7 @@ func NewRegisterRepository(db database.PgxIface, log *zap.Logger) RegisterInterf
 	}
 }
 
+// RegisterAccount registers a new user account in the database.
 func (r *Register) RegisterAccount(ctx context.Context, register *entity.RegisterUser) error {
 	query := `INSERT INTO users (username, email,  phone_number, password_hash, created_at,updated_at) VALUES
 ($1, $2, $3, $4, $5, $6) RETURNING id`

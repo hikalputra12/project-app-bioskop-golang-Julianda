@@ -6,4 +6,5 @@ type RegisterUser struct {
 	Phone    string
 	Email    string
 	Password string
+	Otp      string
 }

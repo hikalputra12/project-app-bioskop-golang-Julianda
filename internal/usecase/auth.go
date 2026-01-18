@@ -29,6 +29,7 @@ func NewAuthUsecase(authRepo repository.AuthRepoInterface, Session repository.Se
 	}
 }
 
+// Login authenticates a user and creates a session.
 func (u *AuthUsecase) Login(ctx context.Context, req dto.LoginRequest) (string, error) {
 	user, err := u.AuthRepo.FindByEmail(ctx, req.Email)
 	if err != nil {

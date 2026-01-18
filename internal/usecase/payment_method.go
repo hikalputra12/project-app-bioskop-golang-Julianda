@@ -17,6 +17,7 @@ type PaymentMethodUsecaseInterface interface {
 	GetAllPaymentMethods(ctx context.Context) ([]*entity.PaymentMethod, error)
 }
 
+// create new payment method usecase
 func NewPaymentMethodUsecase(paymentMethodRepo repository.PaymentMethodInterface, log *zap.Logger) PaymentMethodUsecaseInterface {
 	return &PaymentMethodUsecase{
 		paymentMethodRepo: paymentMethodRepo,
@@ -24,6 +25,7 @@ func NewPaymentMethodUsecase(paymentMethodRepo repository.PaymentMethodInterface
 	}
 }
 
+// get all payment methods
 func (p *PaymentMethodUsecase) GetAllPaymentMethods(ctx context.Context) ([]*entity.PaymentMethod, error) {
 	payment, err := p.paymentMethodRepo.GetAllPaymentMethods(ctx)
 	if err != nil {

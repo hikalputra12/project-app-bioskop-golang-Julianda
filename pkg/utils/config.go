@@ -13,6 +13,7 @@ type Configuration struct {
 	Limit       int
 	PathLogging string
 	DB          DatabaseCofig
+	SMTP        SMTPConfig
 }
 
 type DatabaseCofig struct {
@@ -22,6 +23,12 @@ type DatabaseCofig struct {
 	Host     string
 	Port     string
 	MaxConn  int32
+}
+type SMTPConfig struct {
+	SMTPHost    string
+	SMTPPort    int
+	SenderEmail string
+	AppPassword string
 }
 
 // for read configuration file  .env
@@ -53,6 +60,12 @@ func ReadConfiguration() (Configuration, error) {
 			Host:     viper.GetString("DATABASE_HOST"),
 			Port:     viper.GetString("DATABASE_PORT"),
 			MaxConn:  viper.GetInt32("DATABASE_MAX_CONN"),
+		},
+		SMTP: SMTPConfig{
+			SMTPHost:    viper.GetString("SMTP_HOST"),
+			SMTPPort:    viper.GetInt("SMTP_PORT"),
+			SenderEmail: viper.GetString("SENDER_EMAIL"),
+			AppPassword: viper.GetString("APP_PASSWORD"),
 		},
 	}, nil
 

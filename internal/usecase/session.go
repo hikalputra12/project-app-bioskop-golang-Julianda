@@ -29,6 +29,7 @@ func NewSessionUsecase(sessionRepo repository.SessionRepoInterface,
 	}
 }
 
+// create new session
 func (s *SessionUsecase) CreateSession(ctx context.Context, session *entity.Session) error {
 	if err := s.sessionRepo.CreateSession(ctx, session); err != nil {
 		s.log.Error("failed to create session on reposioty", zap.Error(err))
@@ -43,6 +44,8 @@ func (s *SessionUsecase) RevokedSession(ctx context.Context, revoke string) erro
 	}
 	return nil
 }
+
+// extend session
 func (s *SessionUsecase) ExtendSession(ctx context.Context, session *entity.Session) error {
 	if err := s.sessionRepo.ExtendSession(ctx, session); err != nil {
 		s.log.Error("failed to extend session on reposioty", zap.Error(err))
@@ -50,6 +53,8 @@ func (s *SessionUsecase) ExtendSession(ctx context.Context, session *entity.Sess
 	}
 	return nil
 }
+
+// get user id by session
 func (s *SessionUsecase) GetUserIDBySession(ctx context.Context, session string) (int, error) {
 	userID, err := s.sessionRepo.GetUserIDBySession(ctx, session)
 	if err != nil {
@@ -59,6 +64,7 @@ func (s *SessionUsecase) GetUserIDBySession(ctx context.Context, session string)
 	return userID, nil
 }
 
+// check is session valid
 func (s *SessionUsecase) IsValid(ctx context.Context, session *entity.Session) (bool, error) {
 	valid, err := s.sessionRepo.IsValid(ctx, session)
 	if err != nil {
