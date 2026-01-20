@@ -39,6 +39,7 @@ func SendOTPEmail(toEmail string, otpCode string, config SMTPConfig) error {
 		log.Println("❌ Gagal kirim email:", err)
 		return err
 	}
+
 	if rand.Intn(10) < 3 {
 		return errors.New("stmp error")
 	}
