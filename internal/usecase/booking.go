@@ -16,8 +16,8 @@ type BookingUsecase struct {
 
 type BookingUsecaseInterface interface {
 	BookingSeat(ctx context.Context, req dto.BookingRequest, userID int) error
-	// Payment(ctx context.Context, req dto.PaymentRequest, userID int) (*entity.Payment, error)
-	// BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error)
+	Payment(ctx context.Context, req dto.PaymentRequest, userID int) error
+	BookingHistory(ctx context.Context, page, limit, userID int) ([]*dto.BookingHistoryResponse, error)
 }
 
 func NewBookingUsecase(bookingUsecase repository.BookingRepoInterface, log *zap.Logger) BookingUsecaseInterface {
@@ -42,6 +42,7 @@ func (b *BookingUsecase) BookingSeat(ctx context.Context, req dto.BookingRequest
 			ShowTimeId:      showtimeID,
 			SeatId:          seatID,
 			PaymentMethodID: req.PaymentMethod,
+			Status:          "PENDING",
 		}
 
 		//booking seat
@@ -58,45 +59,37 @@ func (b *BookingUsecase) BookingSeat(ctx context.Context, req dto.BookingRequest
 }
 
 // // logic to get booking history
-// func (b *BookingUsecase) BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error) {
-// 	history, err := b.bookingUsecase.BookingHistory(ctx, page, limit, userID)
-// 	if err != nil {
-// 		b.log.Error("failed to get booking history on repository", zap.Error(err))
-// 		return nil, err
-// 	}
-// 	return history, nil
-// }
+func (b *BookingUsecase) BookingHistory(ctx context.Context, page, limit, userID int) ([]*dto.BookingHistoryResponse, error) {
+	history, err := b.bookingUsecase.BookingHistory(ctx, page, limit, userID)
+	if err != nil {
+		b.log.Error("failed to get booking history on repository", zap.Error(err))
+		return nil, err
+	}
+	return history, nil
+}
 
 // // logic to payment
-// func (b *BookingUsecase) Payment(ctx context.Context, req dto.PaymentRequest, userID int) (*entity.Payment, error) {
-// 	tx, err := b.bookingUsecase.Begin(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	//untuk menghentikan transaksi jika gagal
-// 	defer tx.Rollback(ctx)
+func (b *BookingUsecase) Payment(ctx context.Context, req dto.PaymentRequest, userID int) error {
 
-// 	payment := &entity.Payment{
-// 		UserID:          userID,
-// 		BookingId:       req.BookingId,
-// 		PaymentMethodID: req.PaymentMethod,
-// 		PaymentDetails: entity.PaymentDetails{
-// 			CardNumber: req.PaymentDetails.CardNumber,
-// 			CVV:        req.PaymentDetails.CVV,
-// 			ExpiryDate: req.PaymentDetails.ExpiryDate,
-// 		},
-// 	}
+	payment := &entity.BookingSeat{
+		UserID: userID,
+		Entity: entity.Entity{
+			ID: req.BookingId,
+		},
+		PaymentMethodID: req.PaymentMethod,
+		PaymentDetails: entity.PaymentDetails{
+			CardNumber: req.PaymentDetails.CardNumber,
+			CVV:        req.PaymentDetails.CVV,
+			ExpiryDate: req.PaymentDetails.ExpiryDate,
+		},
+	}
 
-// 	//process payment
-// 	pay, err := b.bookingUsecase.Payment(ctx, tx, payment)
-// 	if err != nil {
-// 		b.log.Error("failed to process payment on repository", zap.Error(err))
-// 		return nil, err
-// 	}
-// 	// Commit: meyimpan perubahan permanen
-// 	if err := tx.Commit(ctx); err != nil {
-// 		b.log.Error("failed to commit transaction", zap.Error(err))
-// 		return nil, err
-// 	}
-// 	return pay, nil
-// }
+	//process payment
+	err := b.bookingUsecase.Payment(ctx, payment)
+	if err != nil {
+		b.log.Error("failed to process payment on repository", zap.Error(err))
+		return err
+	}
+
+	return nil
+}

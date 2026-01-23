@@ -19,10 +19,3 @@ type PaymentDetails struct {
 	CVV        string
 	ExpiryDate string
 }
-
-type BookingHistory struct {
-	MovieTitle string
-	Duration   int
-	ShowTime   string
-	Location   string
-}

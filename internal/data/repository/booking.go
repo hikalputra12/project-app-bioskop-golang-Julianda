@@ -2,6 +2,7 @@ package repository
 
 import (
 	"app-bioskop/internal/data/entity"
+	"app-bioskop/internal/dto"
 	"context"
 	"fmt"
 	"time"
@@ -17,11 +18,9 @@ type BookingRepo struct {
 
 type BookingRepoInterface interface {
 	BookingAndUpdateSeat(ctx context.Context, bookingSeat *entity.BookingSeat, seatID int) error
-	// UpdateSeatAvailability(ctx context.Context, seatID int) error
 	GetShowtimeID(ctx context.Context, seatID int, dateStr, timeStr string) (int, error)
-	// GetIDByDateTime(ctx context.Context, seatID int, dateStr, timeStr string) (int, error)
-	// Payment(ctx context.Context, payment *entity.BookingSeat) (*entity.BookingSeat, error)
-	// BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error)
+	Payment(ctx context.Context, payment *entity.BookingSeat) error
+	BookingHistory(ctx context.Context, page, limit, userID int) ([]*dto.BookingHistoryResponse, error)
 }
 
 func NewBookingRepo(db *gorm.DB, log *zap.Logger) BookingRepoInterface {
@@ -59,29 +58,8 @@ func (b *BookingRepo) BookingAndUpdateSeat(ctx context.Context, bookingSeat *ent
 
 }
 
-// // now := time.Now()
-// // err := tx.QueryRow(ctx, query, bookingSeat.UserID, bookingSeat.ShowtimeId, bookingSeat.SeatId, bookingSeat.PaymentMethod, now).Scan(&bookingSeat.ID)
-// // if err != nil {
-// // 	b.log.Error("failed to create booking seat on database", zap.Error(err))
-// // 	return err
-// // }
-// // bookingSeat.CreatedAt = now
-
-// // function to update seat availability
-// func (b *BookingRepo) UpdateSeatAvailability(ctx context.Context, tx pgx.Tx, seatID int) error {
-// 	query := `UPDATE seats SET is_available = false, updated_at = $1 WHERE id = $2`
-// 	now := time.Now()
-// 	_, err := tx.Exec(ctx, query, now, seatID)
-// 	if err != nil {
-// 		b.log.Error("failed to update seat availability on database", zap.Error(err))
-// 		return err
-// 	}
-// 	return nil
-// }
-
 func (b *BookingRepo) GetShowtimeID(ctx context.Context, seatID int, dateStr, timeStr string) (int, error) {
 
-	// 1. Parsing Waktu dulu (Sesuai diskusi sebelumnya)
 	loc, _ := time.LoadLocation("Local") // Sesuaikan timezone
 	layout := "2006-01-02 15:04"
 	targetTime, err := time.ParseInLocation(layout, dateStr+" "+timeStr, loc)
@@ -91,15 +69,13 @@ func (b *BookingRepo) GetShowtimeID(ctx context.Context, seatID int, dateStr, ti
 
 	var showtimeID int
 
-	// 2. Query: Cari Showtime ID
-	// Logika: Join Seats -> Showtimes (via CinemaID)
-	// Syarat: Seat ID cocok DAN Jam Tayang cocok
+	// Cari Showtime ID
 	err = b.db.WithContext(ctx).
 		Table("showtimes").
 		Select("showtimes.id").
 		Joins("JOIN seats ON seats.cinema_id = showtimes.cinema_id").
 		Where("seats.id = ? AND showtimes.start_time = ?", seatID, targetTime).
-		Scan(&showtimeID).Error // Gunakan Scan untuk ambil single int
+		Scan(&showtimeID).Error
 
 	if err != nil {
 		return 0, err
@@ -112,94 +88,36 @@ func (b *BookingRepo) GetShowtimeID(ctx context.Context, seatID int, dateStr, ti
 	return showtimeID, nil
 }
 
-// func (b *BookingRepo) GetIDByDateTime(ctx context.Context, bookingSeat *entity.BookingSeat) (int,error) {
-
-// 	if showtime, err := b.db.WithContext(ctx).Joins("left join seats ON seats.cinema_id = showtimes.cinema_id").Where("seats.id=?", bookingSeat.SeatId).Find(&bookingSeat.ShowtimeId).Error; err != nil {
-// 		return err
-// 	}
-// 	query := `
-//         SELECT sh.id
-//         FROM showtimes sh
-//         JOIN seats st ON sh.studio_id = st.studio_id
-//         WHERE st.id = $1
-//       AND TO_CHAR(sh.start_time, 'YYYY-MM-DD') = $2
-// AND TO_CHAR(sh.start_time, 'HH24:MI') = $3;
-
-//     `
-
-// err := b.db.QueryRow(ctx, query, seatID, dateStr, timeStr).Scan(&showtimeID)
-// if err != nil {
-// 	return 0, errors.New("jadwal film tidak ditemukan")
-// }
-
-// 	return nil
-// }
-
-// function payment repository
-// func (b *BookingRepo) Payment(ctx context.Context, tx pgx.Tx, payment *entity.Payment) (*entity.Payment, error) {
-// 	query := `UPDATE booking_seat
-// SET status='PAID', payment_details=$1
-// WHERE id=$2 AND user_id=$3 AND status='PENDING' AND payment_method_id=$4`
-// 	// 1. Ubah struct details ke JSON String (Wajib untuk kolom JSONB/Text)
-// 	detailsJSON, err := json.Marshal(payment.PaymentDetails)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	cmdTag, err := tx.Exec(ctx, query, detailsJSON, payment.BookingId, payment.UserID, payment.PaymentMethodID)
-// 	if err != nil {
-// 		b.log.Info("DEBUG PAYMENT",
-// 			zap.Int("Input_BookingID", payment.BookingId),
-// 			zap.Int("Input_UserID", payment.UserID),
-// 			zap.Int("Input_MethodID", payment.PaymentMethodID),
-// 		)
-// 		return nil, err
-// 	}
-// 	if cmdTag.RowsAffected() == 0 {
-// 		return nil, fmt.Errorf("payment failed: booking not found or status invalid")
-// 	}
-
-// 	return payment, nil
-// }
+func (b *BookingRepo) Payment(ctx context.Context, payment *entity.BookingSeat) error {
+	b.db.Transaction(func(tx *gorm.DB) error {
+		result := tx.WithContext(ctx).Model(&payment).Where("id=? AND payment_method_id=?", payment.ID, payment.PaymentMethodID).Updates(map[string]interface{}{"payment_details": payment.PaymentDetails, "status": "PAID"})
+		if result.Error != nil {
+			b.log.Warn("gagal melakukan pembayaran")
+			return result.Error
+		}
+		return nil
+	})
+	return nil
+}
 
 // // function booking history repository
-// func (b *BookingRepo) BookingHistory(ctx context.Context, page, limit, userID int) ([]*entity.BookingHistory, error) {
-// 	offset := (page - 1) * limit
-// 	query := `SELECT m.title, m.duration, TO_CHAR(sh.start_time, 'YYYY-MM-DD HH24:MI') AS show_time, c.location
-// FROM booking_seat bs
-// JOIN showtimes sh ON bs.showtime_id = sh.id
-// JOIN movies m ON sh.movie_id = m.id
-// JOIN studios st ON sh.studio_id = st.id
-// JOIN cinemas c ON st.cinema_id = c.id
-// WHERE bs.user_id=$1 AND bs.status='PAID'
-// ORDER BY bs.created_at DESC
-// LIMIT $2 OFFSET $3;`
+func (b *BookingRepo) BookingHistory(ctx context.Context, page, limit, userID int) ([]*dto.BookingHistoryResponse, error) {
+	offset := (page - 1) * limit
+	var bookingHistory []*dto.BookingHistoryResponse
+	var booking []*entity.BookingSeat
 
-// 	rows, err := b.db.Query(ctx, query, userID, limit, offset)
-// 	if err != nil {
-// 		b.log.Error("failed to get booking history on database", zap.Error(err))
-// 		return nil, err
-// 	}
-// 	var histories []*entity.BookingHistory
+	result := b.db.WithContext(ctx).
+		Joins("JOIN showtimes ON showtimes.id = booking_seats.showtime_id").
+		Joins("JOIN movies ON movies.id = showtimes.movie_id").
+		Joins("JOIN cinemas ON cinemas.id = showtimes.cinema_id").Select("movies.title AS movie_title,movies.duration,showtimes.start_time AS show_time,cinemas.name AS cinema_name,cinemas.location").
+		Where("booking_seats.user_id = ? AND booking_seats.status = ?", userID, "PAID").
+		Limit(limit).
+		Offset(offset).Find(&booking).
+		Scan(&bookingHistory)
+	if result.Error != nil {
+		b.log.Warn("gagal mengambil booking history")
+		return nil, result.Error
+	}
 
-// 	for rows.Next() {
-// 		var t entity.BookingHistory
-// 		err := rows.Scan(&t.MovieTitle, &t.Duration, &t.ShowTime, &t.Location)
-// 		if err != nil {
-// 			b.log.Error("failed to scan rows", zap.Error(err))
-// 		}
-// 		histories = append(histories, &t)
-// 	}
-// 	return histories, nil
-// }
-
-// // method untuk memulai transaksi
-// func (b *BookingRepo) Begin(ctx context.Context) (pgx.Tx, error) {
-// 	tx, err := b.db.Begin(ctx)
-// 	if err != nil {
-// 		b.log.Error("failed to create transaction", zap.Error(err))
-// 		return nil, err
-// 	}
-// 	return tx, nil
-
-// }
+	return bookingHistory, nil
+}
