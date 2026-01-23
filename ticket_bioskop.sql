@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 0OOAfjS2YW5mRQHfdGKo2Nmjre7tubkCKf6PmpRX3Dol56weZvqtHTrS6FePLnP
+\restrict 15DWLge2m5mjveRgjPBhE84bb2QBuBCfgWVDgTLfA4HGnO2JfTRiuNCZWeryoU7
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -23,10 +23,10 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: booking_seat; Type: TABLE; Schema: public; Owner: postgres
+-- Name: booking_seats; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.booking_seat (
+CREATE TABLE public.booking_seats (
     id integer NOT NULL,
     user_id integer,
     showtime_id integer,
@@ -40,7 +40,7 @@ CREATE TABLE public.booking_seat (
 );
 
 
-ALTER TABLE public.booking_seat OWNER TO postgres;
+ALTER TABLE public.booking_seats OWNER TO postgres;
 
 --
 -- Name: booking_seat_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -61,7 +61,7 @@ ALTER SEQUENCE public.booking_seat_id_seq OWNER TO postgres;
 -- Name: booking_seat_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.booking_seat_id_seq OWNED BY public.booking_seat.id;
+ALTER SEQUENCE public.booking_seat_id_seq OWNED BY public.booking_seats.id;
 
 
 --
@@ -191,7 +191,7 @@ ALTER SEQUENCE public.payment_methods_payment_method_id_seq OWNED BY public.paym
 
 CREATE TABLE public.seats (
     id integer NOT NULL,
-    studio_id integer,
+    cinema_id integer,
     seat_number character varying(10),
     is_available boolean DEFAULT true,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
@@ -247,7 +247,7 @@ ALTER TABLE public.sessions OWNER TO postgres;
 CREATE TABLE public.showtimes (
     id integer NOT NULL,
     movie_id integer,
-    studio_id integer,
+    cinema_id integer,
     start_time timestamp without time zone,
     end_time timestamp without time zone,
     price numeric(10,2),
@@ -361,10 +361,10 @@ ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: booking_seat id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: booking_seats id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat ALTER COLUMN id SET DEFAULT nextval('public.booking_seat_id_seq'::regclass);
+ALTER TABLE ONLY public.booking_seats ALTER COLUMN id SET DEFAULT nextval('public.booking_seat_id_seq'::regclass);
 
 
 --
@@ -417,15 +417,12 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
--- Data for Name: booking_seat; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: booking_seats; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.booking_seat (id, user_id, showtime_id, seat_id, payment_method_id, created_at, updated_at, deleted_at, payment_details, status) FROM stdin;
-31	17	1	2	2	2026-01-18 02:01:24.372098	\N	\N	\N	PENDING
-30	17	1	1	2	2026-01-18 02:01:24.369631	\N	\N	{"CVV": "123", "CardNumber": "1234567812345678", "ExpiryDate": "01/06"}	PAID
-18	\N	1	3	1	2026-01-16 03:46:11.787092	\N	\N	{"CVV": "123", "CardNumber": "1234567812345678", "ExpiryDate": "01/06"}	PAID
-29	\N	1	5	2	2026-01-17 23:37:07.092814	\N	\N	{"CVV": "123", "CardNumber": "1234567812345678", "ExpiryDate": "01/06"}	PAID
-28	\N	1	4	2	2026-01-17 23:37:07.087838	\N	\N	{"CVV": "123", "CardNumber": "1234567812345678", "ExpiryDate": "01/06"}	PAID
+COPY public.booking_seats (id, user_id, showtime_id, seat_id, payment_method_id, created_at, updated_at, deleted_at, payment_details, status) FROM stdin;
+65	28	1	3	2	2026-01-24 00:45:54.096521	2026-01-24 01:05:42.23207	\N	{"CVV": "123", "CardNumber": "1234567812345678", "ExpiryDate": "01/06"}	PAID
+67	28	1	4	2	2026-01-24 00:45:54.105638	2026-01-24 01:06:06.331315	\N	{"CVV": "123", "CardNumber": "1234567812345678", "ExpiryDate": "01/06"}	PAID
 \.
 
 
@@ -464,13 +461,13 @@ COPY public.payment_methods (id, name, logo_url, created_at, updated_at, deleted
 -- Data for Name: seats; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.seats (id, studio_id, seat_number, is_available, created_at, updated_at, deleted_at) FROM stdin;
+COPY public.seats (id, cinema_id, seat_number, is_available, created_at, updated_at, deleted_at) FROM stdin;
 6	1	B3	t	2026-01-13 17:38:31.683841	\N	\N
-3	1	A3	f	2026-01-13 17:38:31.683841	2026-01-16 03:46:11.793538	\N
-4	1	B1	f	2026-01-13 17:38:31.683841	2026-01-18 01:57:14.216324	\N
-5	1	B2	f	2026-01-13 17:38:31.683841	2026-01-18 01:57:14.218822	\N
-1	1	A1	f	2026-01-13 17:38:31.683841	2026-01-18 02:02:10.019722	\N
-2	1	A2	f	2026-01-13 17:38:31.683841	2026-01-18 02:02:10.021491	\N
+3	1	A3	f	2026-01-13 17:38:31.683841	2026-01-24 00:45:54.092721	\N
+4	1	B1	f	2026-01-13 17:38:31.683841	2026-01-24 00:45:54.103971	\N
+1	1	A1	t	2026-01-13 17:38:31.683841	2026-01-23 23:13:36.391079	\N
+2	1	A2	t	2026-01-13 17:38:31.683841	2026-01-23 23:13:36.401344	\N
+5	1	B2	t	2026-01-13 17:38:31.683841	2026-01-18 01:57:14.218822	\N
 \.
 
 
@@ -479,9 +476,11 @@ COPY public.seats (id, studio_id, seat_number, is_available, created_at, updated
 --
 
 COPY public.sessions (id, user_id, expired_at, revoked_at, last_active, created_at) FROM stdin;
+c1698a21-6d34-470b-9837-77a57cd08a9e	28	2026-01-25 02:18:46.552503	\N	2026-01-24 02:18:46.552511	2026-01-23 23:41:37.318366
 3e5e7c22-2dca-4422-a19e-5c1449eeeb60	17	2026-01-19 01:48:49.987946	2026-01-18 01:49:03.232485	2026-01-18 01:48:49.987946	2026-01-18 01:48:49.987946
+faf47b53-5b37-4879-b9d3-c0a23fbe0d96	28	2026-01-24 23:24:42.031065	\N	2026-01-23 23:24:42.031066	2026-01-23 23:24:38.967091
+48f2290b-6188-4a4c-b153-2737d4b524bc	28	2026-01-24 23:35:49.171621	\N	2026-01-23 23:35:49.171622	2026-01-23 23:35:42.785589
 ffa6cc7e-c81f-448b-b225-397713613945	17	2026-01-19 02:05:42.614499	2026-01-18 17:47:41.09151	2026-01-18 02:05:42.615018	2026-01-18 01:49:24.199588
-6ba60f3f-19ec-4291-8f71-7d51473a5188	26	2026-01-19 21:04:17.377514	2026-01-18 21:13:00.859344	2026-01-18 21:04:17.377514	2026-01-18 21:04:17.377514
 710c21a5-1bc5-4669-aa3e-911223d62ac3	17	2026-01-19 21:13:36.955703	2026-01-18 21:17:34.440789	2026-01-18 21:13:36.955702	2026-01-18 21:13:36.955702
 \.
 
@@ -490,9 +489,9 @@ ffa6cc7e-c81f-448b-b225-397713613945	17	2026-01-19 02:05:42.614499	2026-01-18 17
 -- Data for Name: showtimes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.showtimes (id, movie_id, studio_id, start_time, end_time, price, created_at, updated_at, deleted_at) FROM stdin;
-1	1	1	2026-01-14 17:38:31.683841	2026-01-14 20:08:31.683841	50000.00	2026-01-13 17:38:31.683841	\N	\N
+COPY public.showtimes (id, movie_id, cinema_id, start_time, end_time, price, created_at, updated_at, deleted_at) FROM stdin;
 2	2	2	2026-01-15 17:38:31.683841	2026-01-15 19:38:31.683841	45000.00	2026-01-13 17:38:31.683841	\N	\N
+1	1	1	2026-01-14 17:38:00	2026-01-14 20:08:31.683841	50000.00	2026-01-13 17:38:31.683841	\N	\N
 \.
 
 
@@ -513,7 +512,8 @@ COPY public.studios (id, cinema_id, name, created_at, updated_at, deleted_at) FR
 
 COPY public.users (id, username, email, password_hash, phone_number, created_at, updated_at, deleted_at, is_verified) FROM stdin;
 17	rania	rania@gmail.com	$2a$14$LZNGxCHjTBmRFB.9DNaBdeA6Gb0BqxufQ/qPgxDuTFZI8mJwe/16u	0823239932424	2026-01-18 01:35:26.78029	2026-01-18 01:35:26.78029	\N	f
-26	haikal	haikal.putra1210@gmail.com	$2a$14$tdF0MQlEQxi0HUMKy5jkvOaUGVNMM9M3A9NdEHbS6scjSOUeFr9Fa	0812345678\n	2026-01-18 21:02:21.582347	2026-01-18 21:02:21.582347	\N	t
+26	haikal	haikal12.putra1210@gmail.com	$2a$14$tdF0MQlEQxi0HUMKy5jkvOaUGVNMM9M3A9NdEHbS6scjSOUeFr9Fa	0812345678\n	2026-01-18 21:02:21.582347	2026-01-18 21:02:21.582347	\N	t
+28	saskia	haikal.putra1210@gmail.com	$2a$14$lne5P3bYgjXbYNyjqmmCue6CkP98oTxhXQWvtX1a1l0z2XDuH3oBu	08123456178	2026-01-22 23:07:43.345369	2026-01-22 23:15:20.543792	\N	t
 \.
 
 
@@ -521,7 +521,7 @@ COPY public.users (id, username, email, password_hash, phone_number, created_at,
 -- Name: booking_seat_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.booking_seat_id_seq', 31, true);
+SELECT pg_catalog.setval('public.booking_seat_id_seq', 66, true);
 
 
 --
@@ -570,14 +570,14 @@ SELECT pg_catalog.setval('public.studios_studio_id_seq', 3, true);
 -- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_user_id_seq', 26, true);
+SELECT pg_catalog.setval('public.users_user_id_seq', 28, true);
 
 
 --
--- Name: booking_seat booking_seat_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_seats booking_seat_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat
+ALTER TABLE ONLY public.booking_seats
     ADD CONSTRAINT booking_seat_pkey PRIMARY KEY (id);
 
 
@@ -638,10 +638,10 @@ ALTER TABLE ONLY public.studios
 
 
 --
--- Name: booking_seat unique_seat_booking; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_seats unique_seat_booking; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat
+ALTER TABLE ONLY public.booking_seats
     ADD CONSTRAINT unique_seat_booking UNIQUE (showtime_id, seat_id, deleted_at);
 
 
@@ -669,34 +669,34 @@ CREATE INDEX idx_users_deleted_at ON public.users USING btree (deleted_at);
 
 
 --
--- Name: booking_seat booking_seat_payment_method_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_seats booking_seat_payment_method_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat
+ALTER TABLE ONLY public.booking_seats
     ADD CONSTRAINT booking_seat_payment_method_id_fkey FOREIGN KEY (payment_method_id) REFERENCES public.payment_methods(id);
 
 
 --
--- Name: booking_seat booking_seat_seat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_seats booking_seat_seat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat
+ALTER TABLE ONLY public.booking_seats
     ADD CONSTRAINT booking_seat_seat_id_fkey FOREIGN KEY (seat_id) REFERENCES public.seats(id);
 
 
 --
--- Name: booking_seat booking_seat_showtime_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_seats booking_seat_showtime_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat
+ALTER TABLE ONLY public.booking_seats
     ADD CONSTRAINT booking_seat_showtime_id_fkey FOREIGN KEY (showtime_id) REFERENCES public.showtimes(id);
 
 
 --
--- Name: booking_seat booking_seat_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_seats booking_seat_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.booking_seat
+ALTER TABLE ONLY public.booking_seats
     ADD CONSTRAINT booking_seat_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
@@ -705,7 +705,7 @@ ALTER TABLE ONLY public.booking_seat
 --
 
 ALTER TABLE ONLY public.seats
-    ADD CONSTRAINT seats_studio_id_fkey FOREIGN KEY (studio_id) REFERENCES public.studios(id);
+    ADD CONSTRAINT seats_studio_id_fkey FOREIGN KEY (cinema_id) REFERENCES public.studios(id);
 
 
 --
@@ -729,7 +729,7 @@ ALTER TABLE ONLY public.showtimes
 --
 
 ALTER TABLE ONLY public.showtimes
-    ADD CONSTRAINT showtimes_studio_id_fkey FOREIGN KEY (studio_id) REFERENCES public.studios(id);
+    ADD CONSTRAINT showtimes_studio_id_fkey FOREIGN KEY (cinema_id) REFERENCES public.studios(id);
 
 
 --
@@ -744,5 +744,5 @@ ALTER TABLE ONLY public.studios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 0OOAfjS2YW5mRQHfdGKo2Nmjre7tubkCKf6PmpRX3Dol56weZvqtHTrS6FePLnP
+\unrestrict 15DWLge2m5mjveRgjPBhE84bb2QBuBCfgWVDgTLfA4HGnO2JfTRiuNCZWeryoU7
 
