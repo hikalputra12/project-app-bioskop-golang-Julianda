@@ -33,19 +33,20 @@ func NewBookingRepo(db *gorm.DB, log *zap.Logger) BookingRepoInterface {
 
 // function to book seat
 func (b *BookingRepo) BookingAndUpdateSeat(ctx context.Context, bookingSeat *entity.BookingSeat, seatID int) error {
-	// 	query := `INSERT INTO booking_seat (user_id, showtime_id, seat_id, payment_method_id, status, created_at)
-	// SELECT $1, $2, s.id, $4,'PENDING', $5
-	// FROM seats s
-	// WHERE s.id = $3
-	// AND s.is_available = TRUE
-	// RETURNING id;`
 	var seat *entity.Seat
 	b.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.WithContext(ctx).Create(&bookingSeat).Error; err != nil {
-			return err
+		result := tx.WithContext(ctx).Model(&seat).Where("id=? AND is_available=?", bookingSeat.SeatId, true).Update("is_available", false)
+		if result.Error != nil {
+			b.log.Error("error database saat update kursi", zap.Error(result.Error))
+			return result.Error
 		}
+		if result.RowsAffected == 0 {
+			b.log.Warn("gagal karena kursi sudha di ambil")
+			return fmt.Errorf("kursi sudah tidak tersedia")
+		}
+
 		tx.Transaction(func(tx *gorm.DB) error {
-			if err := tx.WithContext(ctx).Model(&seat).Where("id=?", bookingSeat.SeatId).Update("is_available", false).Error; err != nil {
+			if err := tx.WithContext(ctx).Create(&bookingSeat).Error; err != nil {
 				return err
 			}
 			return nil
