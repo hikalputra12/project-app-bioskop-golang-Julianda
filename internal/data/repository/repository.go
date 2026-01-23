@@ -1,9 +1,8 @@
 package repository
 
 import (
-	"app-bioskop/pkg/database"
-
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type Repository struct {
@@ -16,7 +15,7 @@ type Repository struct {
 	VerifyRepo        VerifyInterface
 }
 
-func AllRepository(db database.PgxIface, log *zap.Logger) *Repository {
+func AllRepository(db *gorm.DB, log *zap.Logger) *Repository {
 	return &Repository{
 		RegisterRepo:      NewRegisterRepository(db, log),
 		AuthRepo:          NewAuthRepo(db, log),

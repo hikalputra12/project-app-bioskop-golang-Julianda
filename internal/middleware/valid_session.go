@@ -5,6 +5,7 @@ import (
 	"app-bioskop/pkg/utils"
 	"context"
 	"net/http"
+	"time"
 )
 
 func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
@@ -42,8 +43,10 @@ func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
 			newSession := utils.NewUUID()
 			//exted cookie
 			NewsessionID := &entity.Session{
-				NewID: newSession,
-				ID:    getSessionID,
+				NewID:      newSession,
+				ID:         getSessionID,
+				ExpiredAt:  time.Now().Add(24 * time.Hour),
+				LastActive: time.Now(),
 			}
 			err = m.Usecase.SessionUsecase.ExtendSession(ctx, NewsessionID)
 			if err != nil {
@@ -57,6 +60,7 @@ func (m *Middleware) ValidExtend() func(http.Handler) http.Handler {
 				Path:     "/",
 				MaxAge:   24 * 60 * 60,
 				HttpOnly: true,
+				Secure:   false,
 			})
 
 			next.ServeHTTP(w, r.WithContext(ctxUserId))

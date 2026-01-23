@@ -2,14 +2,14 @@ package repository
 
 import (
 	"app-bioskop/internal/data/entity"
-	"app-bioskop/pkg/database"
 	"context"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type PaymentMethodRepo struct {
-	db  database.PgxIface
+	db  *gorm.DB
 	log *zap.Logger
 }
 
@@ -17,7 +17,7 @@ type PaymentMethodInterface interface {
 	GetAllPaymentMethods(ctx context.Context) ([]*entity.PaymentMethod, error)
 }
 
-func NewPaymentMethod(db database.PgxIface, log *zap.Logger) PaymentMethodInterface {
+func NewPaymentMethod(db *gorm.DB, log *zap.Logger) PaymentMethodInterface {
 	return &PaymentMethodRepo{
 		db:  db,
 		log: log,
@@ -25,23 +25,11 @@ func NewPaymentMethod(db database.PgxIface, log *zap.Logger) PaymentMethodInterf
 }
 
 // get all payment methods
-func (p *PaymentMethodRepo) GetAllPaymentMethods(ctx context.Context) ([]*entity.PaymentMethod, error) {
-	query := `SELECT name,logo_url FROM payment_methods
-ORDER BY id ASC `
-
-	rows, err := p.db.Query(ctx, query)
-	if err != nil {
-		p.log.Error("failed to get all payment method on database", zap.Error(err))
+func (b *PaymentMethodRepo) GetAllPaymentMethods(ctx context.Context) ([]*entity.PaymentMethod, error) {
+	var paymentMethod []*entity.PaymentMethod
+	result := b.db.WithContext(ctx).Find(&paymentMethod)
+	if result.Error != nil {
+		return nil, result.Error
 	}
-	var methods []*entity.PaymentMethod
-
-	for rows.Next() {
-		var t entity.PaymentMethod
-		err := rows.Scan(&t.MethodName, &t.Logo)
-		if err != nil {
-			p.log.Error("failed to scan rows", zap.Error(err))
-		}
-		methods = append(methods, &t)
-	}
-	return methods, nil
+	return paymentMethod, nil
 }

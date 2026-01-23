@@ -38,8 +38,8 @@ func Wiring(repo *repository.Repository, log *zap.Logger, config utils.SMTPConfi
 		r.Get("/cinemas/{cinemaId}/seats", adaptor.CinemaAdaptor.GetSeatCinema)
 		r.Get("/payment-methods", adaptor.PaymentMethodAdaptor.GetAllPaymentMethods)
 		r.With(mw.ValidExtend()).Post("/booking", adaptor.BookingAdaptor.BookingSeat)
-		r.With(mw.ValidExtend()).Post("/payment", adaptor.BookingAdaptor.Payment)
-		r.With(mw.ValidExtend()).Get("/user/bookings", adaptor.BookingAdaptor.BookingHistory)
+		// 	r.With(mw.ValidExtend()).Post("/payment", adaptor.BookingAdaptor.Payment)
+		// 	r.With(mw.ValidExtend()).Get("/user/bookings", adaptor.BookingAdaptor.BookingHistory)
 	})
 
 	return r

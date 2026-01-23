@@ -2,6 +2,6 @@ package entity
 
 type PaymentMethod struct {
 	Entity
-	MethodName string
-	Logo       string
+	MethodName string `gorm:"column:name"`
+	Logo       string `gorm:"column:logo_url"`
 }

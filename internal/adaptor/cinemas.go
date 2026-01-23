@@ -23,7 +23,7 @@ func NewCinemaAdaptor(CinemaUsecase usecase.CinemaUsecaseInterface, log *zap.Log
 	}
 }
 
-// get all cinemas
+// // get all cinemas
 func (c *CinemaAdaptor) GetAllCinemas(w http.ResponseWriter, r *http.Request) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
@@ -57,16 +57,11 @@ func (c *CinemaAdaptor) GetAllCinemas(w http.ResponseWriter, r *http.Request) {
 func (c *CinemaAdaptor) GetcinemasById(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "cinemaId")
 	cinemaID, _ := strconv.Atoi(id)
-
-	// Get data cinemass form service all cinemass
 	ctx := r.Context()
+	// Get data cinemass form service all cinemass
 	cinemas, err := c.CinemaUsecase.GetCinemaByID(ctx, cinemaID)
-
 	if err != nil {
-		c.log.Error("failed get cinemas by id on usecase",
-			zap.Error(err),
-		)
-		utils.ResponseBadRequest(w, http.StatusInternalServerError, "Failed to fetch assignments: "+err.Error(), nil)
+		c.log.Error("failed to connect to usecase to find cinema by id", zap.Error(err))
 		return
 	}
 
@@ -78,7 +73,7 @@ func (c *CinemaAdaptor) GetcinemasById(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseSuccess(w, http.StatusOK, "success get data", response)
 }
 
-// get seat cinema by date and time
+// // get seat cinema by date and time
 func (c *CinemaAdaptor) GetSeatCinema(w http.ResponseWriter, r *http.Request) {
 	cinemID, err := strconv.Atoi(chi.URLParam(r, "cinemaId"))
 	if err != nil {
@@ -96,7 +91,7 @@ func (c *CinemaAdaptor) GetSeatCinema(w http.ResponseWriter, r *http.Request) {
 	// Get data Cinemas form usecase all cinemas
 	seats, err := c.CinemaUsecase.GetSeatCinema(ctx, cinemID, date, time)
 	if err != nil {
-		c.log.Error("failed gewt all cinemas on usecase")
+		c.log.Error("failed get all cinemas on usecase")
 		utils.ResponseBadRequest(w, http.StatusInternalServerError, "Failed to fetch cinemas: "+err.Error(), nil)
 		return
 	}

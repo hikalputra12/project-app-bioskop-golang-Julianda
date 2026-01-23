@@ -2,103 +2,80 @@ package repository
 
 import (
 	"app-bioskop/internal/data/entity"
-	"app-bioskop/pkg/database"
 	"context"
+	"time"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type CinemaRepo struct {
-	db  database.PgxIface
+	db  *gorm.DB
 	log *zap.Logger
 }
 
 type CinemasRepoInterface interface {
-	GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int, error)
+	GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int64, error)
 	GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error)
 	GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error)
 }
 
-func NewCinemaRepo(db database.PgxIface, log *zap.Logger) CinemasRepoInterface {
+func NewCinemaRepo(db *gorm.DB, log *zap.Logger) CinemasRepoInterface {
 	return &CinemaRepo{
 		db:  db,
 		log: log,
 	}
 }
 
-// get all cinemas
-func (c *CinemaRepo) GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int, error) {
-	//menghitung offset
-	offset := (page - 1) * limit
-	// get total data for pagination
-	var total int
-	countQuery := `SELECT COUNT(*) FROM cinemas WHERE deleted_at IS NULL`
-	err := c.db.QueryRow(ctx, countQuery).Scan(&total)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	query := `SELECT name,location from cinemas ORDER BY id ASC LIMIT $1 OFFSET $2;`
-	rows, err := c.db.Query(ctx, query, limit, offset)
-	if err != nil {
-		c.log.Error("Database Query Error: failed get all cinemas on database",
-			zap.Error(err),
-			zap.String("query", query),
-		)
-		return nil, 0, err
-	}
-	defer rows.Close()
-
+// // get all cinemas
+func (c *CinemaRepo) GetAllCinemas(ctx context.Context, page, limit int) ([]*entity.Cinema, int64, error) {
 	var cinemas []*entity.Cinema
-
-	for rows.Next() {
-		var t entity.Cinema
-		err := rows.Scan(&t.Name, &t.Location)
-		if err != nil {
-			return nil, 0, err
-		}
-		cinemas = append(cinemas, &t)
+	// 	//menghitung offset
+	offset := (page - 1) * limit
+	// 	// get total data for pagination
+	var total int64
+	err := c.db.Model(&entity.Cinema{}).Count(&total)
+	if err.Error != nil {
+		return nil, 0, nil
 	}
+
+	result := c.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&cinemas)
+	if result.Error != nil {
+		panic("failed to connect to database to get all cinemas")
+	}
+
 	return cinemas, total, nil
 }
 
 // get cinemas by id
 func (c *CinemaRepo) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error) {
-	var cinemas entity.Cinema
-	query := `SELECT name,location from cinemas WHERE id=$1;`
-	err := c.db.QueryRow(ctx, query, id).Scan(&cinemas.Name, &cinemas.Location)
-	if err != nil {
-		c.log.Error("failed to get cinema by id on database", zap.Error(err), zap.String("query", query))
-		return nil, err
+	var cinema entity.Cinema
+	//menggunakan FInd akan menghasilkan sukses jika id tidak ada di bandingkan first akan langsung muncul error
+	result := c.db.WithContext(ctx).First(&cinema, id)
+	if result.Error != nil {
+		c.log.Error("failed connect to database to get cinema by id ")
+		return nil, result.Error
 	}
-	return &cinemas, nil
+	return &cinema, nil
+
 }
 
-// get seat cinema by date and time
-func (c *CinemaRepo) GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error) {
-	query := `SELECT s.seat_number, s.is_available FROM seats s 
-JOIN studios st ON st.id=s.studio_id
-JOIN cinemas c ON c.id= st.cinema_id
-JOIN showtimes sh ON sh.studio_id = st.id
-WHERE c.id=$1
-AND TO_CHAR(sh.start_time, 'YYYY-MM-DD') = $2 
-AND TO_CHAR(sh.start_time, 'HH24:MI') = $3;
+// // get seat cinema by date and time
+func (c *CinemaRepo) GetSeatCinema(ctx context.Context, id int, date, timeStr string) ([]*entity.Seat, error) {
+	//using GORM
+	var seatCinema []*entity.Seat
+	loc, _ := time.LoadLocation("Local")
+	layout := "2006-01-02 15:04"
 
-`
-	rows, err := c.db.Query(ctx, query, id, date, time)
+	startTime, err := time.ParseInLocation(layout, date+" "+timeStr, loc)
 	if err != nil {
-		c.log.Error("failed to get seat by id on database", zap.Error(err), zap.String("query", query))
 		return nil, err
 	}
-	var seats []*entity.Seat
-	for rows.Next() {
-		var t entity.Seat
-		err := rows.Scan(&t.SeatNumber, &t.IsAvaiable)
-		if err != nil {
-			return nil, err
-		}
-		seats = append(seats, &t)
+	result := c.db.Debug().WithContext(ctx).Model(&seatCinema).Select("seats.*").Joins("left join showtimes on showtimes.cinema_id=seats.cinema_id").
+		Where("seats.cinema_id=? AND showtimes.start_time=?", id, startTime).Find(&seatCinema)
+	if result.Error != nil {
+		panic("failed connect to database to get cinema by id and time and date")
 	}
 
-	return seats, nil
+	return seatCinema, nil
 }

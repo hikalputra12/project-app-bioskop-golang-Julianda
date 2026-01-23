@@ -65,6 +65,7 @@ func (a *AuthAdaptor) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   expiryTime,
 		HttpOnly: true,
+		Secure:   false,
 	})
 
 	w.Header().Set("Content-Type", "application/json")

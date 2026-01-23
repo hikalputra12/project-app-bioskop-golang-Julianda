@@ -7,6 +7,8 @@ import (
 	"app-bioskop/pkg/utils"
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -45,10 +47,14 @@ func (b *VerifyUsecase) VerifyOTP(ctx context.Context, req dto.VerifyOTP) (strin
 		return "", err
 	}
 	uuid := utils.NewUUID()
-
+	expiredAt := time.Now()
+	lastActive := time.Now()
+	fmt.Println("iduser", user.ID)
 	session := &entity.Session{
-		ID:     uuid,
-		UserID: user.ID,
+		ExpiredAt:  expiredAt,
+		LastActive: lastActive,
+		ID:         uuid,
+		UserID:     user.ID,
 	}
 	err = b.SessionRepo.CreateSession(ctx, session)
 	if err != nil {

@@ -31,14 +31,14 @@ func NewRegisterUseCase(registerRepo repository.RegisterInterface, log *zap.Logg
 func (u *RegisterUseCase) RegisterAccount(ctx context.Context, req dto.RegisterRequest) error {
 
 	passwordHash := utils.HashPassword(req.Password)
-	newUser := &entity.RegisterUser{
+	newUser := &entity.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Phone:    req.Phone,
 		Password: passwordHash,
-		Otp:      utils.GenerateRandomNumber(6),
 	}
-	u.emailJob <- utils.EmailJob{Email: newUser.Email, Otp: newUser.Otp}
+	Otp := utils.GenerateRandomNumber(6)
+	u.emailJob <- utils.EmailJob{Email: newUser.Email, Otp: Otp}
 	err := u.registerRepo.RegisterAccount(ctx, newUser)
 	if err != nil {
 		u.log.Error("Usecase Error: failed register account",

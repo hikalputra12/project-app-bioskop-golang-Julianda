@@ -7,6 +7,8 @@ import (
 	"app-bioskop/pkg/utils"
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -32,6 +34,7 @@ func NewAuthUsecase(authRepo repository.AuthRepoInterface, Session repository.Se
 // Login authenticates a user and creates a session.
 func (u *AuthUsecase) Login(ctx context.Context, req dto.LoginRequest) (string, error) {
 	user, err := u.AuthRepo.FindByEmail(ctx, req.Email)
+	fmt.Println("iduser", user.ID)
 	if err != nil {
 		u.log.Warn("Login attempt failed: email not found",
 			zap.String("email", req.Email))
@@ -46,8 +49,10 @@ func (u *AuthUsecase) Login(ctx context.Context, req dto.LoginRequest) (string, 
 	uuid := utils.NewUUID()
 
 	session := &entity.Session{
-		ID:     uuid,
-		UserID: user.ID,
+		ID:         uuid,
+		UserID:     user.ID,
+		ExpiredAt:  time.Now().Add(24 * time.Hour),
+		LastActive: time.Now(),
 	}
 	err = u.Session.CreateSession(ctx, session)
 	if err != nil {

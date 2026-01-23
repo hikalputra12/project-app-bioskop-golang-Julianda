@@ -2,26 +2,27 @@ package repository
 
 import (
 	"app-bioskop/internal/data/entity"
-	"app-bioskop/pkg/database"
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type SessionRepo struct {
-	db  database.PgxIface
+	db  *gorm.DB
 	log *zap.Logger
 }
 type SessionRepoInterface interface {
 	CreateSession(ctx context.Context, session *entity.Session) error
-	RevokedSession(ctx context.Context, revoke string) error
+	RevokedSession(ctx context.Context, sessionID string) error
 	ExtendSession(ctx context.Context, session *entity.Session) error
 	GetUserIDBySession(ctx context.Context, session string) (int, error)
 	IsValid(ctx context.Context, session *entity.Session) (bool, error)
 }
 
-func NewSessionRepo(db database.PgxIface, log *zap.Logger) SessionRepoInterface {
+func NewSessionRepo(db *gorm.DB, log *zap.Logger) SessionRepoInterface {
 	return &SessionRepo{
 		db:  db,
 		log: log,
@@ -29,65 +30,59 @@ func NewSessionRepo(db database.PgxIface, log *zap.Logger) SessionRepoInterface 
 }
 
 // create new session
-func (s *SessionRepo) CreateSession(ctx context.Context, session *entity.Session) error {
-	query := `INSERT INTO sessions (id,user_id, expired_at ,last_active, created_at) 
-			VALUES ($1, $2, $3,$4,$5)`
-	now := time.Now()
-	expired := time.Now().Add(24 * time.Hour)
-	_, err := s.db.Exec(ctx, query, session.ID, session.UserID, expired, now, now)
-	if err != nil {
-		s.log.Error("failed insert session on database", zap.Error(err), zap.String("query", query))
-		return err
+func (b *SessionRepo) CreateSession(ctx context.Context, session *entity.Session) error {
+
+	result := b.db.WithContext(ctx).Create(session)
+	if result.Error != nil {
+		return result.Error
 	}
-	session.ExpiredAt = expired
-	session.LastActive = now
-	session.CreatedAt = now
 	return nil
 }
 
 // revoke session
-func (s *SessionRepo) RevokedSession(ctx context.Context, revoke string) error {
-	query := `UPDATE sessions SET revoked_at=NOW()  WHERE id=$1 AND revoked_at is NULL`
+func (b *SessionRepo) RevokedSession(ctx context.Context, sessionID string) error {
+	var session *entity.Session
+	revoked := time.Now()
+	result := b.db.WithContext(ctx).Where("id=? AND revoked_at is NULL", sessionID).Model(&session).Update("revoked_at", revoked)
 
-	_, err := s.db.Exec(ctx, query, revoke)
-	if err != nil {
-		s.log.Error("failed to update revoke on database", zap.Error(err), zap.String("query", query))
-		return err
+	if result.Error != nil {
+		return result.Error
 	}
 	return nil
 }
 
 // extend session
-func (s *SessionRepo) ExtendSession(ctx context.Context, session *entity.Session) error {
-	query := `UPDATE sessions SET id=$1, expired_at=$2 ,last_active=NOW() WHERE id=$3 AND revoked_at is NULL`
-	expired := time.Now().Add(24 * time.Hour)
-	_, err := s.db.Exec(ctx, query, session.NewID, expired, session.ID)
-	if err != nil {
-		s.log.Error("failed to update revoke on database", zap.Error(err), zap.String("query", query))
-		return err
+func (b *SessionRepo) ExtendSession(ctx context.Context, session *entity.Session) error {
+	result := b.db.WithContext(ctx).Model(&session).Where("id=? AND revoked_at is NULL", session.ID).Updates(map[string]interface{}{"expired_at": session.ExpiredAt, "last_active": session.LastActive, "id": session.NewID})
+	if result.Error != nil {
+		return result.Error
 	}
-	session.ExpiredAt = expired
-
+	if result.RowsAffected == 0 {
+		fmt.Println("PERINGATAN: Tidak ada session yang diupdate! Cek ID:", session.ID)
+		return fmt.Errorf("session not found")
+	} else {
+		fmt.Println("SUKSES: Session berhasil diperpanjang untuk ID:", session.ID)
+	}
 	return nil
 }
 
 // check is session valid
-func (s *SessionRepo) IsValid(ctx context.Context, session *entity.Session) (bool, error) {
-	query := `SELECT EXISTS(
-			  SELECT 1 FROM sessions WHERE id=$1 AND revoked_at is NULL AND expired_at > NOW() )`
+func (b *SessionRepo) IsValid(ctx context.Context, session *entity.Session) (bool, error) {
 	var valid bool
-	err := s.db.QueryRow(ctx, query, session.ID).Scan(&valid)
-	return valid, err
+	result := b.db.WithContext(ctx).Raw(`SELECT EXISTS(
+			  SELECT 1 FROM sessions WHERE id=$1 AND revoked_at is NULL AND expired_at > NOW() )`, session.ID).Scan(&valid)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return valid, nil
 }
 
 // mendapatkan user id dari session saat itu
-func (s *SessionRepo) GetUserIDBySession(ctx context.Context, session string) (int, error) {
+func (b *SessionRepo) GetUserIDBySession(ctx context.Context, session string) (int, error) {
 	var userID int
-	query := `SELECT user_id FROM sessions WHERE id = $1 AND revoked_at IS NULL AND expired_at > NOW()`
-
-	err := s.db.QueryRow(ctx, query, session).Scan(&userID)
-	if err != nil {
-		return 0, err
+	result := b.db.WithContext(ctx).Raw(`SELECT user_id FROM sessions WHERE id = $1 AND revoked_at IS NULL AND expired_at > NOW()`, session).Scan(&userID)
+	if result.Error != nil {
+		return 0, result.Error
 	}
 	return userID, nil
 }

@@ -44,21 +44,19 @@ func (c *CinemaUsecase) GetAllCinemas(ctx context.Context, page, limit int) ([]*
 		TotalPages:  utils.TotalPage(limit, int64(total)),
 	}
 	return rows, &pagination, nil
+
 }
 
 // get cinemas by id
 func (c *CinemaUsecase) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema, error) {
 	row, err := c.cinemaRepo.GetCinemaByID(ctx, id)
 	if err != nil {
-		c.log.Error("failed get cinemas by id on repository ",
-			zap.Error(err),
-		)
-		return nil, err
+		c.log.Error("failed connect to repository to find email by id")
 	}
 	return row, nil
 }
 
-// get seat cinema by date and time
+// // get seat cinema by date and time
 func (c *CinemaUsecase) GetSeatCinema(ctx context.Context, id int, date, time string) ([]*entity.Seat, error) {
 	rows, err := c.cinemaRepo.GetSeatCinema(ctx, id, date, time)
 	if err != nil {

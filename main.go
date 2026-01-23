@@ -19,7 +19,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Gagal konek ke database: %v", err)
 	}
-	defer db.Close()
 
 	repo := repository.AllRepository(db, logger)
 	router := wire.Wiring(repo, logger, config.SMTP)
