@@ -28,7 +28,7 @@ func NewAuthRepo(db *gorm.DB, log *zap.Logger) AuthRepoInterface {
 func (b *AuthRepo) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user entity.User
 
-	result := b.db.WithContext(ctx).Select("users.*").Where("email=? AND deleted_at IS NULL", email).First(&user)
+	result := b.db.WithContext(ctx).Select("id, email, password_hash").Where("email=? AND deleted_at IS NULL", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
