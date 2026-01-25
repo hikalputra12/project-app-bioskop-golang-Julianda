@@ -10,20 +10,20 @@ import (
 )
 
 // buat struct suite agar teratur
-type Suite struct {
+type SuiteAuth struct {
 	suite.Suite
 	mock   sqlmock.Sqlmock
 	gormDB *gorm.DB
 	repo   Repository
 }
 
-func (s *Suite) SetupSuite() {
+func (s *SuiteAuth) SetupTest() {
 	s.gormDB, s.mock = MockDB(s.T()) //masukkan testing context
 
 	s.repo.AuthRepo = NewAuthRepo(s.gormDB, nil)
 }
 
-func (s *Suite) TestFindByEmail() {
+func (s *SuiteAuth) TestFindByEmail() {
 
 	//buat data dummy
 	s.Run("success", func() {
@@ -48,8 +48,8 @@ func (s *Suite) TestFindByEmail() {
 	//ekspetasi email tidak di temukan
 	s.Run("not_found", func() {
 		email := "tidakada@gmail.com"
-		s.mock.ExpectQuery(`FROM "users`).
-			WithArgs(email, 1).
+		s.mock.ExpectQuery(`FROM "users"`).
+			WithArgs(email, sqlmock.AnyArg()).
 			WillReturnError(gorm.ErrRecordNotFound)
 
 		user, err := s.repo.AuthRepo.FindByEmail(context.Background(), email)
@@ -61,5 +61,5 @@ func (s *Suite) TestFindByEmail() {
 //fungsi untuk test semua fungsi testing yang di kumpulkan di suite
 
 func TestAuthRepo(t *testing.T) {
-	suite.Run(t, new(Suite))
+	suite.Run(t, new(SuiteAuth))
 }

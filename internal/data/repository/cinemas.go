@@ -36,7 +36,7 @@ func (c *CinemaRepo) GetAllCinemas(ctx context.Context, page, limit int) ([]*ent
 	var total int64
 	err := c.db.Model(&entity.Cinema{}).Count(&total)
 	if err.Error != nil {
-		return nil, 0, nil
+		return nil, 0, err.Error
 	}
 
 	result := c.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&cinemas)
