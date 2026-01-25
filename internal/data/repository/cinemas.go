@@ -53,7 +53,6 @@ func (c *CinemaRepo) GetCinemaByID(ctx context.Context, id int) (*entity.Cinema,
 	//menggunakan FInd akan menghasilkan sukses jika id tidak ada di bandingkan first akan langsung muncul error
 	result := c.db.WithContext(ctx).First(&cinema, id)
 	if result.Error != nil {
-		c.log.Error("failed connect to database to get cinema by id ")
 		return nil, result.Error
 	}
 	return &cinema, nil

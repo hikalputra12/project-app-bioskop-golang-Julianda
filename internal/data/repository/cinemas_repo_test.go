@@ -67,6 +67,46 @@ func (s *suiteCinema) TestGetAllCinemas() {
 	})
 }
 
+func (s *suiteCinema) TestGetCinemasByID() {
+
+	s.Run("success", func() {
+		id := 1
+		// Data Dummy
+		rows := sqlmock.NewRows([]string{
+			"id", "name", "location", "deleted_at",
+		}).AddRow(id, "Cinepolis", "Mall Panakukang", nil)
+
+		//menggunakan regexp.QuoteMeta untuk membaca *
+		s.mock.ExpectQuery(`FROM "cinemas"`).WithArgs(id, sqlmock.AnyArg()).
+			WillReturnRows(rows)
+
+		cinema, err := s.repo.CinemaRepo.GetCinemaByID(context.Background(), id)
+
+		//lakukan validasi
+		s.NoError(err)
+		s.NotNil(cinema)
+		s.Equal(id, cinema.ID)
+		s.Equal("Cinepolis", cinema.Name)
+		s.Equal("Mall Panakukang", cinema.Location)
+
+		// Cek apakah semua urutan mock terpenuhi
+		s.NoError(s.mock.ExpectationsWereMet())
+	})
+
+	s.Run("not_found", func() {
+		id := 2
+		s.mock.ExpectQuery(`FROM "cinemas"`).WithArgs(id, sqlmock.AnyArg()).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		cinema, err := s.repo.CinemaRepo.GetCinemaByID(context.Background(), id)
+
+		s.Error(err)
+		s.Nil(cinema)
+
+		s.NoError(s.mock.ExpectationsWereMet())
+	})
+}
+
 // fungsi untuk test semua fungsi testing yang di kumpulkan di suite
 func TestCinemaRepo(t *testing.T) {
 	suite.Run(t, new(suiteCinema))
