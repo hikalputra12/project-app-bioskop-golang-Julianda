@@ -107,6 +107,49 @@ func (s *suiteCinema) TestGetCinemasByID() {
 	})
 }
 
+func (s *suiteCinema) TestGetSeatCinema() {
+
+	s.Run("success", func() {
+		id := 1
+		dateStr := "2006-01-02"
+		timeStr := "15:40"
+
+		// Data Dummy
+		rows := sqlmock.NewRows([]string{"id",
+			"seat_number", "is_available", "deleted_at",
+		}).AddRow(id, "A1", true, nil)
+
+		//menggunakan regexp.QuoteMeta untuk membaca *
+		s.mock.ExpectQuery(`FROM "seats"`).WithArgs(id, sqlmock.AnyArg()).
+			WillReturnRows(rows)
+
+		seats, err := s.repo.CinemaRepo.GetSeatCinema(context.Background(), id, dateStr, timeStr)
+
+		//lakukan validasi
+		s.NoError(err)
+		s.NotNil(seats)
+		s.Require().NotEmpty(seats, "Data tidak boleh kosong")
+		s.Equal(id, seats[0].ID, "ID yang dikembalikan harus sama dengan yang diminta")
+		s.NoError(s.mock.ExpectationsWereMet())
+	})
+
+	s.Run("not_found", func() {
+		id := 3
+		dateStr := "2009-01-02"
+		timeStr := "16:40"
+
+		s.mock.ExpectQuery(`FROM "seats"`).WithArgs(id, sqlmock.AnyArg()).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		seats, err := s.repo.CinemaRepo.GetSeatCinema(context.Background(), id, dateStr, timeStr)
+
+		s.Error(err)
+		s.Nil(seats)
+
+		s.NoError(s.mock.ExpectationsWereMet())
+	})
+}
+
 // fungsi untuk test semua fungsi testing yang di kumpulkan di suite
 func TestCinemaRepo(t *testing.T) {
 	suite.Run(t, new(suiteCinema))

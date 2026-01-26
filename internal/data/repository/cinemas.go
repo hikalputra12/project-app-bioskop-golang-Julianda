@@ -73,7 +73,7 @@ func (c *CinemaRepo) GetSeatCinema(ctx context.Context, id int, date, timeStr st
 	result := c.db.Debug().WithContext(ctx).Model(&seatCinema).Select("seats.*").Joins("left join showtimes on showtimes.cinema_id=seats.cinema_id").
 		Where("seats.cinema_id=? AND showtimes.start_time=?", id, startTime).Find(&seatCinema)
 	if result.Error != nil {
-		panic("failed connect to database to get cinema by id and time and date")
+		return nil, result.Error
 	}
 
 	return seatCinema, nil
